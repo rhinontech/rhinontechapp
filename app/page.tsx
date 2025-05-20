@@ -6,6 +6,7 @@ import Loading from "./loading";
 
 export default function Home() {
   const router = useRouter();
+  //   const authToken = Cookies.get("authToken");
 
   const redirectAccToUserRole = (userRole: string) => {
     switch (userRole) {
