@@ -12,6 +12,8 @@ const permissions_1 = __importDefault(require("./routes/permissions"));
 const employees_1 = __importDefault(require("./routes/employees"));
 const provisioning_1 = __importDefault(require("./routes/provisioning"));
 const inbox_1 = __importDefault(require("./routes/inbox"));
+const payroll_1 = __importDefault(require("./routes/payroll"));
+const people_1 = __importDefault(require("./routes/people"));
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)({ origin: env_1.env.frontendUrl, credentials: true }));
 app.use(express_1.default.json());
@@ -21,6 +23,8 @@ app.use("/permissions", permissions_1.default);
 app.use("/employees", employees_1.default);
 app.use("/provisioning", provisioning_1.default);
 app.use("/inbox", inbox_1.default);
+app.use("/payroll", payroll_1.default);
+app.use("/people", people_1.default);
 app.get("/health", (_req, res) => {
     res.json({ status: "ok" });
 });

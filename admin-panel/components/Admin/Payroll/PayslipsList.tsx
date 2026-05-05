@@ -14,26 +14,46 @@ interface Payslip {
   totalDeductions: number;
   status: string;
   payroll: { month: number; year: number; status: string };
+  employee?: { fullName: string; companyEmail: string; department: string };
 }
 
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
 export function PayslipsList() {
   const [payslips, setPayslips] = useState<Payslip[]>([]);
+  const [permissions, setPermissions] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const roleSlug = pathname.split("/")[1];
 
   useEffect(() => {
+    let parsedPermissions: string[] = [];
+    try {
+      parsedPermissions = JSON.parse(Cookies.get("permissions") ?? "[]");
+    } catch {
+      parsedPermissions = [];
+    }
+    setPermissions(parsedPermissions);
+
     const token = Cookies.get("authToken");
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/payroll/me/payslips`, {
+    const isAdmin = parsedPermissions.includes("payroll:write");
+    const runId = new URLSearchParams(window.location.search).get("run");
+    const params = new URLSearchParams();
+    if (runId) params.set("run", runId);
+    const endpoint = isAdmin
+      ? `/payroll/admin/payslips${params.toString() ? `?${params.toString()}` : ""}`
+      : "/payroll/me/payslips";
+
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())
-      .then(setPayslips)
+      .then((data) => setPayslips(Array.isArray(data) ? data : []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  const isAdmin = permissions?.includes("payroll:write") ?? false;
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-stone-100 rounded-r-xl">
@@ -43,7 +63,7 @@ export function PayslipsList() {
       </div>
 
       <div className="flex-1 overflow-auto p-5">
-        {loading ? (
+        {permissions === null || loading ? (
           <p className="text-sm text-gray-400">Loading...</p>
         ) : payslips.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center text-gray-400 text-sm">No payslips found.</div>
@@ -55,7 +75,10 @@ export function PayslipsList() {
                   <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><TbFileInvoice size={20} /></div>
                   <div>
                     <p className="font-medium text-gray-900">{MONTHS[slip.payroll.month - 1]} {slip.payroll.year}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">Net ₹{Number(slip.netPay).toLocaleString("en-IN")} · Gross ₹{Number(slip.grossPay).toLocaleString("en-IN")}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {isAdmin && slip.employee ? `${slip.employee.fullName} · ` : ""}
+                      Net ₹{Number(slip.netPay).toLocaleString("en-IN")} · Gross ₹{Number(slip.grossPay).toLocaleString("en-IN")}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">

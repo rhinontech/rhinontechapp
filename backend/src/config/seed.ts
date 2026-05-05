@@ -60,6 +60,18 @@ async function seed() {
   } else {
     console.log("Superadmin user already exists");
   }
+  await user.update({
+    employmentType: "Full-Time",
+    compensationType: "Salaried",
+    workSchedule: "Standard (Mon-Fri)",
+    workLocation: "Bengaluru",
+    paymentFrequency: "Monthly",
+    basicSalary: 90000,
+    hra: 36000,
+    ta: 6000,
+    medicalAllowance: 2500,
+    otherAllowances: 8000,
+  });
 
   const supportPasswordHash = await bcrypt.hash("Support@123", 10);
   const [supportUser] = await User.findOrCreate({
@@ -74,6 +86,18 @@ async function seed() {
       joiningDate: new Date(),
       status: "active",
     },
+  });
+  await supportUser.update({
+    employmentType: "Full-Time",
+    compensationType: "Salaried",
+    workSchedule: "Standard (Mon-Fri)",
+    workLocation: "Hyderabad",
+    paymentFrequency: "Monthly",
+    basicSalary: 52000,
+    hra: 20800,
+    ta: 4000,
+    medicalAllowance: 2000,
+    otherAllowances: 5000,
   });
 
   const conversationSeeds = [

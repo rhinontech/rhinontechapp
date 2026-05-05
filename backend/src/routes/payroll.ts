@@ -5,8 +5,99 @@ import { authenticate, authorize, AuthRequest } from "../middleware/authenticate
 const router = Router();
 router.use(authenticate);
 
-// ── Admin: list all payroll runs ─────────────────────────────────────────────
-router.get("/", authorize("payroll:read"), async (_req: AuthRequest, res: Response) => {
+// ═══════════════════════════════════════════════════════════════════════════════
+// EMPLOYEE routes  (require payslips:read)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// My payslips
+router.get("/me/payslips", authorize("payslips:read"), async (req: AuthRequest, res: Response) => {
+  const payslips = await Payslip.findAll({
+    where: { userId: req.user!.userId },
+    include: [{ model: Payroll, as: "payroll", attributes: ["month", "year", "status"] }],
+    order: [
+      [{ model: Payroll, as: "payroll" }, "year", "DESC"],
+      [{ model: Payroll, as: "payroll" }, "month", "DESC"],
+    ],
+  });
+  res.json(payslips);
+});
+
+// Single payslip
+router.get("/me/payslips/:id", authorize("payslips:read"), async (req: AuthRequest, res: Response) => {
+  const payslip = await Payslip.findOne({
+    where: { id: req.params.id, userId: req.user!.userId },
+    include: [
+      { model: Payroll, as: "payroll", attributes: ["month", "year", "status"] },
+      {
+        model: User,
+        as: "employee",
+        attributes: ["fullName", "companyEmail", "department", "joiningDate"],
+        include: [{ model: Role, as: "role", attributes: ["name"] }],
+      },
+    ],
+  });
+  if (!payslip) { res.status(404).json({ message: "Payslip not found" }); return; }
+  res.json(payslip);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ADMIN routes  (require payroll:write)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// List all employees with their salary structure
+router.get("/admin/employees", authorize("payroll:write"), async (_req: AuthRequest, res: Response) => {
+  const employees = await User.findAll({
+    where: { status: "active" },
+    attributes: [
+      "id", "fullName", "companyEmail", "department", "joiningDate",
+      "employmentType", "workLocation",
+      "basicSalary", "hra", "ta", "medicalAllowance", "otherAllowances",
+    ],
+    include: [{ model: Role, as: "role", attributes: ["name", "slug"] }],
+    order: [["fullName", "ASC"]],
+  });
+  res.json(employees);
+});
+
+// Get single employee's full profile + salary (for admin edit)
+router.get("/admin/employees/:userId", authorize("payroll:write"), async (req: AuthRequest, res: Response) => {
+  const user = await User.findByPk(req.params.userId, {
+    attributes: { exclude: ["passwordHash"] },
+    include: [{ model: Role, as: "role", attributes: ["name", "slug"] }],
+  });
+  if (!user) { res.status(404).json({ message: "Employee not found" }); return; }
+  res.json(user);
+});
+
+// Set / update an employee's salary structure
+router.put("/admin/employees/:userId/salary", authorize("payroll:write"), async (req: AuthRequest, res: Response) => {
+  const { basicSalary, hra = 0, ta = 0, medicalAllowance = 0, otherAllowances = 0 } = req.body;
+  if (!basicSalary || basicSalary <= 0) {
+    res.status(400).json({ message: "basicSalary is required and must be > 0" });
+    return;
+  }
+  const user = await User.findByPk(req.params.userId);
+  if (!user) { res.status(404).json({ message: "Employee not found" }); return; }
+
+  await user.update({ basicSalary, hra, ta, medicalAllowance, otherAllowances });
+  res.json({ message: "Salary updated", basicSalary, hra, ta, medicalAllowance, otherAllowances });
+});
+
+// Update employee HR details (employment type, PAN, etc.)
+router.put("/admin/employees/:userId/details", authorize("payroll:write"), async (req: AuthRequest, res: Response) => {
+  const allowed = ["pan", "employmentType", "compensationType", "workSchedule", "remotePosition", "workLocation", "paymentFrequency", "department"];
+  const update: Record<string, unknown> = {};
+  for (const key of allowed) {
+    if (req.body[key] !== undefined) update[key] = req.body[key];
+  }
+  const user = await User.findByPk(req.params.userId);
+  if (!user) { res.status(404).json({ message: "Employee not found" }); return; }
+  await user.update(update);
+  res.json({ message: "Details updated" });
+});
+
+// List all payroll runs
+router.get("/admin/runs", authorize("payroll:write"), async (_req: AuthRequest, res: Response) => {
   const runs = await Payroll.findAll({
     order: [["year", "DESC"], ["month", "DESC"]],
     include: [{ model: User, as: "processedBy", attributes: ["fullName"] }],
@@ -14,23 +105,50 @@ router.get("/", authorize("payroll:read"), async (_req: AuthRequest, res: Respon
   res.json(runs);
 });
 
-// ── Admin: create a payroll run ───────────────────────────────────────────────
-router.post("/", authorize("payroll:write"), async (req: AuthRequest, res: Response) => {
-  const { month, year } = req.body;
-  if (!month || !year) { res.status(400).json({ message: "month and year required" }); return; }
+// List all payslips for admins, optionally filtered by payroll run
+router.get("/admin/payslips", authorize("payroll:write"), async (req: AuthRequest, res: Response) => {
+  const where = typeof req.query.run === "string" ? { payrollId: req.query.run } : {};
 
-  const exists = await Payroll.findOne({ where: { month, year } });
-  if (exists) { res.status(409).json({ message: "Payroll for this period already exists" }); return; }
+  const payslips = await Payslip.findAll({
+    where,
+    include: [
+      { model: Payroll, as: "payroll", attributes: ["id", "month", "year", "status"] },
+      { model: User, as: "employee", attributes: ["id", "fullName", "companyEmail", "department"] },
+    ],
+    order: [
+      [{ model: Payroll, as: "payroll" }, "year", "DESC"],
+      [{ model: Payroll, as: "payroll" }, "month", "DESC"],
+      [{ model: User, as: "employee" }, "fullName", "ASC"],
+    ],
+  });
 
-  const payroll = await Payroll.create({ month, year });
-  res.status(201).json(payroll);
+  res.json(payslips);
 });
 
-// ── Admin: get payroll with all payslips ─────────────────────────────────────
-router.get("/:id", authorize("payroll:read"), async (req: AuthRequest, res: Response) => {
+// Get any payslip for admins
+router.get("/admin/payslips/:id", authorize("payroll:write"), async (req: AuthRequest, res: Response) => {
+  const payslip = await Payslip.findByPk(req.params.id, {
+    include: [
+      { model: Payroll, as: "payroll", attributes: ["month", "year", "status"] },
+      {
+        model: User,
+        as: "employee",
+        attributes: ["fullName", "companyEmail", "department", "joiningDate"],
+        include: [{ model: Role, as: "role", attributes: ["name"] }],
+      },
+    ],
+  });
+
+  if (!payslip) { res.status(404).json({ message: "Payslip not found" }); return; }
+  res.json(payslip);
+});
+
+// Get a single payroll run with all payslips
+router.get("/admin/runs/:id", authorize("payroll:write"), async (req: AuthRequest, res: Response) => {
   const payroll = await Payroll.findByPk(req.params.id, {
     include: [{
-      model: Payslip, as: "payslips",
+      model: Payslip,
+      as: "payslips",
       include: [{ model: User, as: "employee", attributes: ["id", "fullName", "companyEmail", "department"] }],
     }],
   });
@@ -38,73 +156,88 @@ router.get("/:id", authorize("payroll:read"), async (req: AuthRequest, res: Resp
   res.json(payroll);
 });
 
-// ── Admin: add / update a payslip within a payroll run ───────────────────────
-router.post("/:id/payslips", authorize("payroll:write"), async (req: AuthRequest, res: Response) => {
-  const payroll = await Payroll.findByPk(req.params.id);
-  if (!payroll) { res.status(404).json({ message: "Payroll not found" }); return; }
-  if (payroll.status === "paid") { res.status(400).json({ message: "Cannot edit a paid payroll" }); return; }
+// Auto-run payroll for a month — generates payslips for all active employees with salary set
+router.post("/admin/run", authorize("payroll:write"), async (req: AuthRequest, res: Response) => {
+  const { month, year } = req.body;
+  if (!month || !year) { res.status(400).json({ message: "month and year are required" }); return; }
 
-  const {
-    userId, basicSalary,
-    hra = 0, ta = 0, medicalAllowance = 0, otherAllowances = 0,
-    tds = 0, professionalTax = 0, otherDeductions = 0,
-  } = req.body;
+  const exists = await Payroll.findOne({ where: { month, year } });
+  if (exists) { res.status(409).json({ message: `Payroll for this period already exists (status: ${exists.status})` }); return; }
 
-  const pfEmployee = Math.round(basicSalary * 0.12 * 100) / 100;
-  const pfEmployer = Math.round(basicSalary * 0.12 * 100) / 100;
-  const grossPay = basicSalary + hra + ta + medicalAllowance + otherAllowances;
-  const totalDeductions = pfEmployee + tds + professionalTax + otherDeductions;
-  const netPay = grossPay - totalDeductions;
-
-  const [payslip] = await Payslip.findOrCreate({
-    where: { payrollId: payroll.id, userId },
-    defaults: { payrollId: payroll.id, userId, basicSalary, hra, ta, medicalAllowance, otherAllowances, grossPay, pfEmployee, pfEmployer, tds, professionalTax, otherDeductions, totalDeductions, netPay },
+  // Fetch all active employees who have a salary configured
+  const employees = await User.findAll({
+    where: { status: "active" },
+    attributes: ["id", "basicSalary", "hra", "ta", "medicalAllowance", "otherAllowances"],
   });
 
-  // recalculate totals
-  const allSlips = await Payslip.findAll({ where: { payrollId: payroll.id } });
-  const totalGross = allSlips.reduce((s, p) => s + Number(p.grossPay), 0);
-  const totalNet = allSlips.reduce((s, p) => s + Number(p.netPay), 0);
+  const eligible = employees.filter((e) => e.basicSalary && Number(e.basicSalary) > 0);
+  if (eligible.length === 0) {
+    res.status(400).json({ message: "No active employees have a salary structure configured." });
+    return;
+  }
+
+  const payroll = await Payroll.create({ month, year, processedById: req.user!.userId });
+
+  let totalGross = 0;
+  let totalNet = 0;
+
+  for (const emp of eligible) {
+    const basicSalary  = Number(emp.basicSalary);
+    const hra          = Number(emp.hra ?? 0);
+    const ta           = Number(emp.ta ?? 0);
+    const medicalAllowance = Number(emp.medicalAllowance ?? 0);
+    const otherAllowances  = Number(emp.otherAllowances ?? 0);
+
+    const grossPay        = basicSalary + hra + ta + medicalAllowance + otherAllowances;
+    const pfEmployee      = Math.round(basicSalary * 0.12 * 100) / 100;
+    const pfEmployer      = pfEmployee;
+    const professionalTax = 200; // ₹200/month standard
+    const tds             = 0;   // simplified; can be calculated from annual income
+    const otherDeductions = 0;
+    const totalDeductions = pfEmployee + professionalTax + tds + otherDeductions;
+    const netPay          = grossPay - totalDeductions;
+
+    await Payslip.create({
+      payrollId: payroll.id,
+      userId: emp.id,
+      basicSalary,
+      hra,
+      ta,
+      medicalAllowance,
+      otherAllowances,
+      grossPay,
+      pfEmployee,
+      pfEmployer,
+      tds,
+      professionalTax,
+      otherDeductions,
+      totalDeductions,
+      netPay,
+      status: "draft",
+    });
+
+    totalGross += grossPay;
+    totalNet   += netPay;
+  }
+
   await payroll.update({ totalGross, totalNet });
 
-  res.status(201).json(payslip);
+  res.status(201).json({
+    message: `Payroll run complete. ${eligible.length} payslips generated.`,
+    payroll: { id: payroll.id, month, year, status: payroll.status, totalGross, totalNet, count: eligible.length },
+  });
 });
 
-// ── Admin: mark payroll as paid ───────────────────────────────────────────────
-router.post("/:id/pay", authorize("payroll:write"), async (req: AuthRequest, res: Response) => {
+// Mark payroll run as paid (all payslips → paid)
+router.post("/admin/runs/:id/pay", authorize("payroll:write"), async (req: AuthRequest, res: Response) => {
   const payroll = await Payroll.findByPk(req.params.id);
   if (!payroll) { res.status(404).json({ message: "Payroll not found" }); return; }
+  if (payroll.status === "paid") { res.status(400).json({ message: "Already paid" }); return; }
 
   const paymentDate = new Date();
-  await Payslip.update(
-    { status: "paid", paymentDate },
-    { where: { payrollId: payroll.id } }
-  );
+  await Payslip.update({ status: "paid", paymentDate }, { where: { payrollId: payroll.id } });
   await payroll.update({ status: "paid", processedById: req.user!.userId, processedAt: paymentDate });
   res.json({ message: "Payroll marked as paid" });
-});
-
-// ── Employee: my payslips ─────────────────────────────────────────────────────
-router.get("/me/payslips", authorize("payslips:read"), async (req: AuthRequest, res: Response) => {
-  const payslips = await Payslip.findAll({
-    where: { userId: req.user!.userId },
-    include: [{ model: Payroll, as: "payroll", attributes: ["month", "year", "status"] }],
-    order: [[{ model: Payroll, as: "payroll" }, "year", "DESC"], [{ model: Payroll, as: "payroll" }, "month", "DESC"]],
-  });
-  res.json(payslips);
-});
-
-// ── Employee: single payslip ──────────────────────────────────────────────────
-router.get("/me/payslips/:id", authorize("payslips:read"), async (req: AuthRequest, res: Response) => {
-  const payslip = await Payslip.findOne({
-    where: { id: req.params.id, userId: req.user!.userId },
-    include: [
-      { model: Payroll, as: "payroll", attributes: ["month", "year", "status"] },
-      { model: User, as: "employee", attributes: ["fullName", "companyEmail", "department", "joiningDate"], include: [{ model: Role, as: "role", attributes: ["name"] }] },
-    ],
-  });
-  if (!payslip) { res.status(404).json({ message: "Payslip not found" }); return; }
-  res.json(payslip);
 });
 
 export default router;

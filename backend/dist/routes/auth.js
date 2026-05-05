@@ -43,8 +43,16 @@ router.post("/login", async (req, res) => {
 router.post("/logout", (_req, res) => {
     res.json({ message: "Logged out" });
 });
-router.get("/me", authenticate_1.authenticate, (req, res) => {
-    res.json(req.user);
+router.get("/me", authenticate_1.authenticate, async (req, res) => {
+    const user = await models_1.User.findByPk(req.user.userId, {
+        include: [{ model: models_1.Role, as: "role" }],
+        attributes: { exclude: ["passwordHash"] },
+    });
+    if (!user) {
+        res.status(404).json({ message: "User not found" });
+        return;
+    }
+    res.json(user);
 });
 exports.default = router;
 //# sourceMappingURL=auth.js.map

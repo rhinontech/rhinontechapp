@@ -10,10 +10,22 @@ interface UserAttributes {
     department: string;
     status: UserStatus;
     joiningDate: Date;
+    pan?: string;
+    employmentType?: string;
+    compensationType?: string;
+    workSchedule?: string;
+    remotePosition?: boolean;
+    workLocation?: string;
+    paymentFrequency?: string;
+    basicSalary?: number;
+    hra?: number;
+    ta?: number;
+    medicalAllowance?: number;
+    otherAllowances?: number;
     createdAt?: Date;
     updatedAt?: Date;
 }
-interface UserCreationAttributes extends Optional<UserAttributes, "id" | "companyEmail" | "status"> {
+interface UserCreationAttributes extends Optional<UserAttributes, "id" | "companyEmail" | "status" | "pan" | "employmentType" | "compensationType" | "workSchedule" | "remotePosition" | "workLocation" | "paymentFrequency" | "basicSalary" | "hra" | "ta" | "medicalAllowance" | "otherAllowances"> {
 }
 export declare class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
     id: string;
@@ -25,6 +37,18 @@ export declare class User extends Model<UserAttributes, UserCreationAttributes> 
     department: string;
     status: UserStatus;
     joiningDate: Date;
+    pan: string;
+    employmentType: string;
+    compensationType: string;
+    workSchedule: string;
+    remotePosition: boolean;
+    workLocation: string;
+    paymentFrequency: string;
+    basicSalary: number;
+    hra: number;
+    ta: number;
+    medicalAllowance: number;
+    otherAllowances: number;
     createdAt: Date;
     updatedAt: Date;
 }

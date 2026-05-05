@@ -16,6 +16,10 @@ const ALL_PERMISSIONS = [
     { name: "settings:write", resource: "settings", action: "write" },
     { name: "inbox:read", resource: "inbox", action: "read" },
     { name: "inbox:write", resource: "inbox", action: "write" },
+    { name: "payroll:read", resource: "payroll", action: "read" },
+    { name: "payroll:write", resource: "payroll", action: "write" },
+    { name: "payslips:read", resource: "payslips", action: "read" },
+    { name: "people:read", resource: "people", action: "read" },
 ];
 async function seed() {
     await database_1.sequelize.authenticate();
@@ -54,6 +58,18 @@ async function seed() {
     else {
         console.log("Superadmin user already exists");
     }
+    await user.update({
+        employmentType: "Full-Time",
+        compensationType: "Salaried",
+        workSchedule: "Standard (Mon-Fri)",
+        workLocation: "Bengaluru",
+        paymentFrequency: "Monthly",
+        basicSalary: 90000,
+        hra: 36000,
+        ta: 6000,
+        medicalAllowance: 2500,
+        otherAllowances: 8000,
+    });
     const supportPasswordHash = await bcryptjs_1.default.hash("Support@123", 10);
     const [supportUser] = await models_1.User.findOrCreate({
         where: { companyEmail: "support@rhinontech.in" },
@@ -67,6 +83,18 @@ async function seed() {
             joiningDate: new Date(),
             status: "active",
         },
+    });
+    await supportUser.update({
+        employmentType: "Full-Time",
+        compensationType: "Salaried",
+        workSchedule: "Standard (Mon-Fri)",
+        workLocation: "Hyderabad",
+        paymentFrequency: "Monthly",
+        basicSalary: 52000,
+        hra: 20800,
+        ta: 4000,
+        medicalAllowance: 2000,
+        otherAllowances: 5000,
     });
     const conversationSeeds = [
         {

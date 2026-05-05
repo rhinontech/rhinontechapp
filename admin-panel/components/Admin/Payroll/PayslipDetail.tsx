@@ -44,10 +44,20 @@ export function PayslipDetail({ id }: { id: string }) {
 
   useEffect(() => {
     const token = Cookies.get("authToken");
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/payroll/me/payslips/${id}`, {
+    let permissions: string[] = [];
+    try {
+      permissions = JSON.parse(Cookies.get("permissions") ?? "[]");
+    } catch {
+      permissions = [];
+    }
+    const endpoint = permissions.includes("payroll:write")
+      ? `/payroll/admin/payslips/${id}`
+      : `/payroll/me/payslips/${id}`;
+
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : null))
       .then(setSlip)
       .catch(() => {})
       .finally(() => setLoading(false));
