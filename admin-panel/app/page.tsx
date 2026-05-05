@@ -1,41 +1,16 @@
-"use client";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import Cookies from "js-cookie";
-import Loading from "./loading";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { decodeToken } from "@/lib/auth";
 
-export default function Home() {
-  const router = useRouter();
+export default async function Home() {
+  const cookieStore = await cookies();
+  const authToken = cookieStore.get("authToken")?.value;
 
-  const redirectAccToUserRole = (userRole: string) => {
-    switch (userRole) {
-      case "SuperAdmin":
-        router.push("/superadmin/dashboard");
-        break;
-      case "Admin":
-        router.push("/admin/dashboard");
-        break;
-      case "Support":
-        router.push("/support/dashboard");
-        break;
-    }
-  };
+  if (!authToken) redirect("/auth/login");
 
-  useEffect(() => {
-    const authToken = Cookies.get("authToken");
-    const currentRole = Cookies.get("currentRole");
-    if (authToken && currentRole) {
-      redirectAccToUserRole(currentRole);
-    } else {
-      Cookies.remove("authToken");
-      Cookies.remove("currentRole");
-      router.push("/auth/login");
-    }
-  }, []);
+  const payload = decodeToken(authToken);
 
-  return (
-    <>
-      <Loading />
-    </>
-  );
+  if (!payload) redirect("/auth/login");
+
+  redirect(`/${payload.roleSlug}/dashboard`);
 }

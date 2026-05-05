@@ -1,47 +1,51 @@
-"use client"
-import { cn } from "@/lib/utils"
-import { Card, CardContent } from "@/components/ui/card"
-import { useRouter } from "next/navigation";
+"use client";
+import { cn } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
 import Cookies from "js-cookie";
-import { Shield, UserCog, Headphones } from "lucide-react";
-
-const roles = [
-  {
-    id: "SuperAdmin",
-    label: "Super Admin",
-    description: "Full platform access and control",
-    icon: <Shield className="h-8 w-8" />,
-    color: "text-purple-600",
-    bg: "hover:bg-purple-50 hover:border-purple-300",
-  },
-  {
-    id: "Admin",
-    label: "Admin",
-    description: "Manage workspace, agents and settings",
-    icon: <UserCog className="h-8 w-8" />,
-    color: "text-blue-600",
-    bg: "hover:bg-blue-50 hover:border-blue-300",
-  },
-  {
-    id: "Support",
-    label: "Support",
-    description: "Handle conversations and tickets",
-    icon: <Headphones className="h-8 w-8" />,
-    color: "text-green-600",
-    bg: "hover:bg-green-50 hover:border-green-300",
-  },
-];
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 export function Login({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const loginAs = (role: string) => {
-    Cookies.set("authToken", "dummyToken");
-    Cookies.set("currentRole", role);
-    router.push("/");
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/auth/login`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || "Invalid email or password");
+        return;
+      }
+
+      Cookies.set("authToken", data.token, { expires: 7 });
+      Cookies.set("permissions", JSON.stringify(data.permissions), { expires: 7 });
+      window.location.href = `/${data.roleSlug}/dashboard`;
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -53,27 +57,41 @@ export function Login({
               <div className="flex flex-col items-center text-center">
                 <h1 className="text-2xl font-bold">Welcome back</h1>
                 <p className="text-muted-foreground text-balance mt-1">
-                  Select your role to continue
+                  Sign in to your account
                 </p>
               </div>
-              <div className="flex flex-col gap-3">
-                {roles.map((role) => (
-                  <button
-                    key={role.id}
-                    onClick={() => loginAs(role.id)}
-                    className={cn(
-                      "flex items-center gap-4 rounded-xl border border-border p-4 text-left transition-all duration-150",
-                      role.bg
-                    )}
-                  >
-                    <span className={role.color}>{role.icon}</span>
-                    <div>
-                      <p className="font-semibold text-sm">{role.label}</p>
-                      <p className="text-xs text-muted-foreground">{role.description}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
+              <form onSubmit={handleLogin} className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@rhinontech.in"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    autoComplete="email"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete="current-password"
+                  />
+                </div>
+                {error && (
+                  <p className="text-sm text-red-500">{error}</p>
+                )}
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "Signing in..." : "Sign in"}
+                </Button>
+              </form>
             </div>
           </div>
           <div className="bg-muted relative hidden md:block">
@@ -90,5 +108,5 @@ export function Login({
         and <a href="#">Privacy Policy</a>.
       </div>
     </div>
-  )
+  );
 }

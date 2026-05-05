@@ -1,0 +1,27 @@
+import express from "express";
+import cors from "cors";
+import { env } from "./config/env";
+import authRoutes from "./routes/auth";
+import rolesRoutes from "./routes/roles";
+import permissionsRoutes from "./routes/permissions";
+import employeesRoutes from "./routes/employees";
+import provisioningRoutes from "./routes/provisioning";
+import inboxRoutes from "./routes/inbox";
+
+const app = express();
+
+app.use(cors({ origin: env.frontendUrl, credentials: true }));
+app.use(express.json());
+
+app.use("/auth", authRoutes);
+app.use("/roles", rolesRoutes);
+app.use("/permissions", permissionsRoutes);
+app.use("/employees", employeesRoutes);
+app.use("/provisioning", provisioningRoutes);
+app.use("/inbox", inboxRoutes);
+
+app.get("/health", (_req, res) => {
+  res.json({ status: "ok" });
+});
+
+export default app;
