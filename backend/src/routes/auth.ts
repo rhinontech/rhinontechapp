@@ -55,8 +55,16 @@ router.post("/logout", (_req: Request, res: Response) => {
   res.json({ message: "Logged out" });
 });
 
-router.get("/me", authenticate, (req: AuthRequest, res: Response) => {
-  res.json(req.user);
+router.get("/me", authenticate, async (req: AuthRequest, res: Response) => {
+  const user = await User.findByPk(req.user!.userId, {
+    include: [{ model: Role, as: "role" }],
+    attributes: { exclude: ["passwordHash"] },
+  });
+  if (!user) {
+    res.status(404).json({ message: "User not found" });
+    return;
+  }
+  res.json(user);
 });
 
 export default router;

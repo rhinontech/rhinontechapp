@@ -13,7 +13,7 @@ export function AdminDashboardShell({
     <div className="flex h-screen w-full overflow-hidden bg-stone-200">
       <Sidebar />
       <main className="flex flex-col m-2 gap-2 w-full">
-        {/* <TrialBanner /> */}
+        <TrialBanner />
         <div className={`flex-1 h-full ${className}`}>{children}</div>
       </main>
     </div>

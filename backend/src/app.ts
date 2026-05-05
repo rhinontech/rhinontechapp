@@ -7,6 +7,8 @@ import permissionsRoutes from "./routes/permissions";
 import employeesRoutes from "./routes/employees";
 import provisioningRoutes from "./routes/provisioning";
 import inboxRoutes from "./routes/inbox";
+import payrollRoutes from "./routes/payroll";
+import peopleRoutes from "./routes/people";
 
 const app = express();
 
@@ -19,6 +21,8 @@ app.use("/permissions", permissionsRoutes);
 app.use("/employees", employeesRoutes);
 app.use("/provisioning", provisioningRoutes);
 app.use("/inbox", inboxRoutes);
+app.use("/payroll", payrollRoutes);
+app.use("/people", peopleRoutes);
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });

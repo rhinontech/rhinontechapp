@@ -13,12 +13,34 @@ interface UserAttributes {
   department: string;
   status: UserStatus;
   joiningDate: Date;
+  // Extended payroll / HR fields
+  pan?: string;
+  employmentType?: string;
+  compensationType?: string;
+  workSchedule?: string;
+  remotePosition?: boolean;
+  workLocation?: string;
+  annualCompensation?: number;
+  paymentFrequency?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 interface UserCreationAttributes
-  extends Optional<UserAttributes, "id" | "companyEmail" | "status"> {}
+  extends Optional<
+    UserAttributes,
+    | "id"
+    | "companyEmail"
+    | "status"
+    | "pan"
+    | "employmentType"
+    | "compensationType"
+    | "workSchedule"
+    | "remotePosition"
+    | "workLocation"
+    | "annualCompensation"
+    | "paymentFrequency"
+  > {}
 
 export class User
   extends Model<UserAttributes, UserCreationAttributes>
@@ -33,6 +55,14 @@ export class User
   declare department: string;
   declare status: UserStatus;
   declare joiningDate: Date;
+  declare pan: string;
+  declare employmentType: string;
+  declare compensationType: string;
+  declare workSchedule: string;
+  declare remotePosition: boolean;
+  declare workLocation: string;
+  declare annualCompensation: number;
+  declare paymentFrequency: string;
   declare createdAt: Date;
   declare updatedAt: Date;
 }
@@ -76,6 +106,43 @@ User.init(
     joiningDate: {
       type: DataTypes.DATEONLY,
       allowNull: false,
+    },
+    pan: {
+      type: DataTypes.STRING(10),
+      allowNull: true,
+    },
+    employmentType: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: "Full-Time",
+    },
+    compensationType: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: "Salaried",
+    },
+    workSchedule: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: "Standard (Mon–Fri)",
+    },
+    remotePosition: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+      defaultValue: false,
+    },
+    workLocation: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    annualCompensation: {
+      type: DataTypes.DECIMAL(12, 2),
+      allowNull: true,
+    },
+    paymentFrequency: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: "Monthly",
     },
   },
   {

@@ -12,6 +12,10 @@ const ALL_PERMISSIONS = [
   { name: "settings:write",    resource: "settings",     action: "write" },
   { name: "inbox:read",        resource: "inbox",        action: "read"  },
   { name: "inbox:write",       resource: "inbox",        action: "write" },
+  { name: "payroll:read",      resource: "payroll",      action: "read"  },
+  { name: "payroll:write",     resource: "payroll",      action: "write" },
+  { name: "payslips:read",     resource: "payslips",     action: "read"  },
+  { name: "people:read",       resource: "people",       action: "read"  },
 ];
 
 async function seed() {
