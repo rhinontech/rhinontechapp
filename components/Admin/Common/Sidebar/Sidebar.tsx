@@ -64,6 +64,7 @@ export function Sidebar() {
 
   const logOut = () => {
     Cookies.remove("authToken");
+    Cookies.remove("currentRole");
     router.push("/auth/login");
   };
 

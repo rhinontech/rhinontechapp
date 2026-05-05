@@ -23,13 +23,12 @@ export default function Home() {
 
   useEffect(() => {
     const authToken = Cookies.get("authToken");
-    if (authToken) {
-      // fetchIpAddress(userEmail, provider);
-      Cookies.set("currentRole", "admin");
-      redirectAccToUserRole("Admin");
+    const currentRole = Cookies.get("currentRole");
+    if (authToken && currentRole) {
+      redirectAccToUserRole(currentRole);
     } else {
-      // the user will be redirected to the login page after 1000 millisecound.
       Cookies.remove("authToken");
+      Cookies.remove("currentRole");
       router.push("/auth/login");
     }
   }, []);
