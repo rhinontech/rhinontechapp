@@ -81,6 +81,16 @@ router.post("/", authorize("employees:write"), async (req: AuthRequest, res: Res
     return;
   }
 
+  // Enforce one superadmin
+  const role = await Role.findByPk(roleId);
+  if (role?.slug === "superadmin") {
+    const existing = await User.findOne({ include: [{ model: Role, as: "role", where: { slug: "superadmin" } }] });
+    if (existing) {
+      res.status(400).json({ message: "A Super Admin already exists. Only one superadmin is allowed." });
+      return;
+    }
+  }
+
   const firstName = fullName.split(" ")[0].toLowerCase();
   const companyEmail = `${firstName}@rhinontech.in`;
 
@@ -109,6 +119,17 @@ router.put("/:id", authorize("employees:write"), async (req: AuthRequest, res: R
   if (!employee) {
     res.status(404).json({ message: "Employee not found" });
     return;
+  }
+  // Enforce one superadmin — if changing someone else's role TO superadmin, block it
+  if (req.body.roleId) {
+    const role = await Role.findByPk(req.body.roleId);
+    if (role?.slug === "superadmin" && employee.roleId !== req.body.roleId) {
+      const existing = await User.findOne({ include: [{ model: Role, as: "role", where: { slug: "superadmin" } }] });
+      if (existing && existing.id !== employee.id) {
+        res.status(400).json({ message: "A Super Admin already exists. Only one superadmin is allowed." });
+        return;
+      }
+    }
   }
   await employee.update(employeePayload(req.body));
   res.json({ ...employee.toJSON(), passwordHash: undefined });

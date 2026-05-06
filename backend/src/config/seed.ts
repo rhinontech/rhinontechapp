@@ -29,7 +29,7 @@ async function seed() {
   const permissionInstances = permissions.map(([p]) => p);
   console.log("Permissions seeded");
 
-  // Create superadmin role with all permissions
+  // Superadmin — all permissions
   const [superadminRole] = await Role.findOrCreate({
     where: { slug: "superadmin" },
     defaults: { name: "Super Admin", slug: "superadmin" },
@@ -37,32 +37,55 @@ async function seed() {
   await (superadminRole as any).setPermissions(permissionInstances);
   console.log("Superadmin role seeded");
 
-  // Create initial superadmin user
-  // joiningDate = 6 May 2024 (2-year anniversary this month), dateOfBirth = 6 May 1994 (birthday today)
+  // HR — manage team + payroll, no provisioning/settings
+  const hrPermissions = permissionInstances.filter((p) =>
+    ["dashboard:read", "employees:read", "employees:write", "people:read",
+     "payroll:read", "payroll:write", "payslips:read", "inbox:read", "inbox:write"].includes(p.name)
+  );
+  const [hrRole] = await Role.findOrCreate({
+    where: { slug: "hr" },
+    defaults: { name: "HR", slug: "hr" },
+  });
+  await (hrRole as any).setPermissions(hrPermissions);
+  console.log("HR role seeded");
+
+  // Employee — own payslips + dashboard + read-only team directory
+  const employeePermissions = permissionInstances.filter((p) =>
+    ["dashboard:read", "payslips:read", "people:read"].includes(p.name)
+  );
+  const [employeeRole] = await Role.findOrCreate({
+    where: { slug: "employee" },
+    defaults: { name: "Employee", slug: "employee" },
+  });
+  await (employeeRole as any).setPermissions(employeePermissions);
+  console.log("Employee role seeded");
+
+  // Prabhat Patra — the one superadmin
   const passwordHash = await bcrypt.hash("Admin@123", 10);
-  const [user, created] = await User.findOrCreate({
-    where: { companyEmail: "admin@rhinontech.in" },
-    defaults: {
-      fullName: "Super Admin",
-      personalEmail: "admin@rhinontech.in",
-      companyEmail: "admin@rhinontech.in",
+  // Migrate from old admin@rhinontech.in if it exists
+  let user = await User.findOne({ where: { companyEmail: "prabhat@rhinontech.in" } });
+  if (!user) user = await User.findOne({ where: { companyEmail: "admin@rhinontech.in" } });
+  if (!user) {
+    user = await User.create({
+      fullName: "Prabhat Patra",
+      personalEmail: "prabhatpatra24@gmail.com",
+      companyEmail: "prabhat@rhinontech.in",
       passwordHash,
       roleId: superadminRole.id,
       department: "Engineering",
       joiningDate: new Date("2024-05-06"),
       dateOfBirth: new Date("1994-05-06"),
       status: "active",
-    },
-  });
-
-  if (created) {
-    console.log("Superadmin user created:");
-    console.log("  Email:    admin@rhinontech.in");
-    console.log("  Password: Admin@123");
+    });
+    console.log("Superadmin user created: prabhat@rhinontech.in / Admin@123");
   } else {
-    console.log("Superadmin user already exists");
+    console.log("Superadmin user found — updating to prabhat@rhinontech.in");
   }
   await user.update({
+    fullName: "Prabhat Patra",
+    personalEmail: "prabhatpatra24@gmail.com",
+    companyEmail: "prabhat@rhinontech.in",
+    roleId: superadminRole.id,
     joiningDate: new Date("2024-05-06"),
     dateOfBirth: new Date("1994-05-06"),
     employmentType: "Full-Time",
@@ -70,30 +93,39 @@ async function seed() {
     workSchedule: "Standard (Mon-Fri)",
     workLocation: "Bengaluru",
     paymentFrequency: "Monthly",
-    basicSalary: 90000,
-    hra: 36000,
-    ta: 6000,
-    medicalAllowance: 2500,
-    otherAllowances: 8000,
+    basicSalary: 20000,
+    hra: 0,
+    ta: 0,
+    medicalAllowance: 0,
+    otherAllowances: 0,
+    pfEnabled: false,
+    ptAmount: 0,
+    tdsAmount: 0,
   });
 
   const supportPasswordHash = await bcrypt.hash("Support@123", 10);
-  // joiningDate = 15 May 2023 (anniversary mid-May), dateOfBirth = 15 May 1996
-  const [supportUser] = await User.findOrCreate({
-    where: { companyEmail: "support@rhinontech.in" },
-    defaults: {
+  // Ishra may exist with old companyEmail "support@rhinontech.in" — migrate to ishra@rhinontech.in
+  let supportUser = await User.findOne({ where: { personalEmail: "ishra@rhinontech.in" } });
+  if (!supportUser) {
+    supportUser = await User.findOne({ where: { companyEmail: "support@rhinontech.in" } });
+  }
+  if (!supportUser) {
+    supportUser = await User.create({
       fullName: "Ishra Fatima",
       personalEmail: "ishra@rhinontech.in",
-      companyEmail: "support@rhinontech.in",
+      companyEmail: "ishra@rhinontech.in",
       passwordHash: supportPasswordHash,
-      roleId: superadminRole.id,
+      roleId: employeeRole.id,
       department: "Support",
       joiningDate: new Date("2023-05-15"),
       dateOfBirth: new Date("1996-05-15"),
       status: "active",
-    },
-  });
+    });
+  }
   await supportUser.update({
+    companyEmail: "ishra@rhinontech.in",
+    personalEmail: "ishra@rhinontech.in",
+    roleId: employeeRole.id,
     joiningDate: new Date("2023-05-15"),
     dateOfBirth: new Date("1996-05-15"),
     employmentType: "Full-Time",
@@ -101,91 +133,103 @@ async function seed() {
     workSchedule: "Standard (Mon-Fri)",
     workLocation: "Hyderabad",
     paymentFrequency: "Monthly",
-    basicSalary: 52000,
-    hra: 20800,
-    ta: 4000,
-    medicalAllowance: 2000,
-    otherAllowances: 5000,
+    basicSalary: 15000,
+    hra: 0,
+    ta: 0,
+    medicalAllowance: 0,
+    otherAllowances: 0,
+    pfEnabled: false,
+    ptAmount: 0,
+    tdsAmount: 0,
   });
 
-  // Additional demo employees
+  // Additional demo employees — startup salaries, no allowances, no PF/PT
   const demoEmployees = [
     {
       fullName: "Aarav Mehta",
       personalEmail: "aarav@rhinontech.in",
       companyEmail: "aarav@rhinontech.in",
       passwordHash: await bcrypt.hash("Demo@123", 10),
-      roleId: superadminRole.id,
+      roleId: employeeRole.id,
       department: "Product",
       joiningDate: new Date("2026-04-28"),
       dateOfBirth: new Date("1995-03-12"),
       status: "active" as const,
       employmentType: "Full-Time", compensationType: "Salaried",
       workSchedule: "Standard (Mon-Fri)", workLocation: "Bengaluru", paymentFrequency: "Monthly",
-      basicSalary: 75000, hra: 30000, ta: 5000, medicalAllowance: 2000, otherAllowances: 6000,
+      basicSalary: 18000, hra: 0, ta: 0, medicalAllowance: 0, otherAllowances: 0,
+      pfEnabled: false, ptAmount: 0, tdsAmount: 0,
     },
     {
       fullName: "Priya Nair",
       personalEmail: "priya@rhinontech.in",
       companyEmail: "priya@rhinontech.in",
       passwordHash: await bcrypt.hash("Demo@123", 10),
-      roleId: superadminRole.id,
+      roleId: employeeRole.id,
       department: "Design",
       joiningDate: new Date("2026-05-01"),
       dateOfBirth: new Date("1998-07-22"),
       status: "active" as const,
       employmentType: "Full-Time", compensationType: "Salaried",
       workSchedule: "Standard (Mon-Fri)", workLocation: "Mumbai", paymentFrequency: "Monthly",
-      basicSalary: 68000, hra: 27200, ta: 4500, medicalAllowance: 1800, otherAllowances: 5500,
+      basicSalary: 16000, hra: 0, ta: 0, medicalAllowance: 0, otherAllowances: 0,
+      pfEnabled: false, ptAmount: 0, tdsAmount: 0,
     },
     {
       fullName: "Kabir Shah",
       personalEmail: "kabir@rhinontech.in",
       companyEmail: "kabir@rhinontech.in",
       passwordHash: await bcrypt.hash("Demo@123", 10),
-      roleId: superadminRole.id,
+      roleId: employeeRole.id,
       department: "Engineering",
       joiningDate: new Date("2025-05-20"),
       dateOfBirth: new Date("1993-05-20"),
       status: "active" as const,
       employmentType: "Full-Time", compensationType: "Salaried",
       workSchedule: "Standard (Mon-Fri)", workLocation: "Bengaluru", paymentFrequency: "Monthly",
-      basicSalary: 85000, hra: 34000, ta: 5500, medicalAllowance: 2200, otherAllowances: 7000,
+      basicSalary: 22000, hra: 0, ta: 0, medicalAllowance: 0, otherAllowances: 0,
+      pfEnabled: false, ptAmount: 0, tdsAmount: 0,
     },
     {
       fullName: "Neha Kapoor",
       personalEmail: "neha@rhinontech.in",
       companyEmail: "neha@rhinontech.in",
       passwordHash: await bcrypt.hash("Demo@123", 10),
-      roleId: superadminRole.id,
+      roleId: employeeRole.id,
       department: "Finance",
       joiningDate: new Date("2024-08-10"),
       dateOfBirth: new Date("1997-11-03"),
       status: "active" as const,
       employmentType: "Full-Time", compensationType: "Salaried",
       workSchedule: "Standard (Mon-Fri)", workLocation: "Delhi", paymentFrequency: "Monthly",
-      basicSalary: 72000, hra: 28800, ta: 4800, medicalAllowance: 2000, otherAllowances: 5800,
+      basicSalary: 17000, hra: 0, ta: 0, medicalAllowance: 0, otherAllowances: 0,
+      pfEnabled: false, ptAmount: 0, tdsAmount: 0,
     },
     {
       fullName: "Rohan Desai",
       personalEmail: "rohan@rhinontech.in",
       companyEmail: "rohan@rhinontech.in",
       passwordHash: await bcrypt.hash("Demo@123", 10),
-      roleId: superadminRole.id,
+      roleId: employeeRole.id,
       department: "Sales",
       joiningDate: new Date("2026-05-05"),
       dateOfBirth: new Date("1999-09-18"),
       status: "active" as const,
       employmentType: "Full-Time", compensationType: "Salaried",
       workSchedule: "Standard (Mon-Fri)", workLocation: "Pune", paymentFrequency: "Monthly",
-      basicSalary: 60000, hra: 24000, ta: 4000, medicalAllowance: 1500, otherAllowances: 4500,
+      basicSalary: 14000, hra: 0, ta: 0, medicalAllowance: 0, otherAllowances: 0,
+      pfEnabled: false, ptAmount: 0, tdsAmount: 0,
     },
   ];
 
   for (const emp of demoEmployees) {
-    const { employmentType, compensationType, workSchedule, workLocation, paymentFrequency, basicSalary, hra, ta, medicalAllowance, otherAllowances, ...defaults } = emp;
-    const [demoUser] = await User.findOrCreate({ where: { companyEmail: emp.companyEmail }, defaults });
-    await demoUser.update({ employmentType, compensationType, workSchedule, workLocation, paymentFrequency, basicSalary, hra, ta, medicalAllowance, otherAllowances });
+    const { employmentType, compensationType, workSchedule, workLocation, paymentFrequency,
+            basicSalary, hra, ta, medicalAllowance, otherAllowances,
+            pfEnabled, ptAmount, tdsAmount, roleId, ...defaults } = emp;
+    const [demoUser] = await User.findOrCreate({ where: { companyEmail: emp.companyEmail }, defaults: { ...defaults, roleId } });
+    await demoUser.update({ roleId, employmentType, compensationType, workSchedule, workLocation, paymentFrequency,
+                            basicSalary, hra, ta, medicalAllowance, otherAllowances,
+                            pfEnabled, ptAmount, tdsAmount });
   }
   console.log("Demo employees seeded");
 

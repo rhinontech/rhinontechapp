@@ -21,6 +21,9 @@ interface UserProfile {
   ta?: number;
   medicalAllowance?: number;
   otherAllowances?: number;
+  pfEnabled?: boolean;
+  ptAmount?: number;
+  tdsAmount?: number;
   role?: { name: string };
 }
 
@@ -58,9 +61,10 @@ export function EmployeeSalaryDetails() {
   const medical = Number(profile?.medicalAllowance ?? 0);
   const other   = Number(profile?.otherAllowances ?? 0);
   const gross   = basic + hra + ta + medical + other;
-  const pf      = Math.round(basic * 0.12);
-  const pt      = 200;
-  const net     = gross - pf - pt;
+  const pf      = profile?.pfEnabled !== false ? Math.round(basic * 0.12) : 0;
+  const pt      = Number(profile?.ptAmount  ?? 200);
+  const tds     = Number(profile?.tdsAmount ?? 0);
+  const net     = gross - pf - pt - tds;
   const annual  = gross * 12;
 
   const joinDate = profile?.joiningDate
@@ -151,9 +155,9 @@ export function EmployeeSalaryDetails() {
                   <table className="w-full text-sm">
                     <tbody className="divide-y divide-gray-50">
                       {[
-                        { label: "PF (Employee 12% of Basic)", value: pf  },
-                        { label: "Professional Tax",           value: pt  },
-                        { label: "TDS",                        value: 0   },
+                        { label: pf > 0 ? "PF (Employee 12% of Basic)" : "PF (Not applicable)", value: pf  },
+                        { label: "Professional Tax",                                              value: pt  },
+                        { label: "TDS",                                                           value: tds },
                       ].map((row) => (
                         <tr key={row.label} className="hover:bg-gray-50">
                           <td className="px-5 py-3 text-gray-600">{row.label}</td>
@@ -165,8 +169,8 @@ export function EmployeeSalaryDetails() {
                     <tfoot className="border-t border-gray-200 bg-gray-50 font-semibold text-gray-900">
                       <tr>
                         <td className="px-5 py-3">Total Deductions</td>
-                        <td className="px-5 py-3 text-right text-red-600">−{INR(pf + pt)}</td>
-                        <td className="px-5 py-3 text-right text-xs text-gray-400">−{INR((pf + pt) * 12)} / yr</td>
+                        <td className="px-5 py-3 text-right text-red-600">−{INR(pf + pt + tds)}</td>
+                        <td className="px-5 py-3 text-right text-xs text-gray-400">−{INR((pf + pt + tds) * 12)} / yr</td>
                       </tr>
                     </tfoot>
                   </table>

@@ -43,6 +43,10 @@ interface UserAttributes {
   ta?: number;
   medicalAllowance?: number;
   otherAllowances?: number;
+  // Deduction config — overrides defaults when set
+  pfEnabled?: boolean;   // default true (12% of basic)
+  ptAmount?: number;     // default 200 — set 0 to disable
+  tdsAmount?: number;    // default 0 — manual monthly TDS override
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -81,6 +85,9 @@ interface UserCreationAttributes
     | "ta"
     | "medicalAllowance"
     | "otherAllowances"
+    | "pfEnabled"
+    | "ptAmount"
+    | "tdsAmount"
   > {}
 
 export class User
@@ -124,6 +131,9 @@ export class User
   declare ta: number;
   declare medicalAllowance: number;
   declare otherAllowances: number;
+  declare pfEnabled: boolean;
+  declare ptAmount: number;
+  declare tdsAmount: number;
   declare createdAt: Date;
   declare updatedAt: Date;
 }
@@ -167,6 +177,9 @@ User.init(
     ta: { type: DataTypes.DECIMAL(12, 2), allowNull: true, defaultValue: 0 },
     medicalAllowance: { type: DataTypes.DECIMAL(12, 2), allowNull: true, defaultValue: 0 },
     otherAllowances: { type: DataTypes.DECIMAL(12, 2), allowNull: true, defaultValue: 0 },
+    pfEnabled:  { type: DataTypes.BOOLEAN,       allowNull: true, defaultValue: true },
+    ptAmount:   { type: DataTypes.DECIMAL(10, 2), allowNull: true, defaultValue: 200 },
+    tdsAmount:  { type: DataTypes.DECIMAL(10, 2), allowNull: true, defaultValue: 0   },
   },
   { sequelize, tableName: "users", timestamps: true }
 );

@@ -16,6 +16,7 @@ import {
   TbArrowsTransferDown,
   TbGift,
   TbId,
+  TbFilePlus,
 } from "react-icons/tb";
 
 function PayrollLayoutContent({ children }: { children: React.ReactNode }) {
@@ -35,10 +36,11 @@ function PayrollLayoutContent({ children }: { children: React.ReactNode }) {
   const isAdmin = permissions?.includes("payroll:write") ?? false;
 
   const adminItems = [
-    { label: "Dashboard",    href: `${base}/overview`,   icon: <MdOutlineDashboard size={18} /> },
-    { label: "Employees",    href: `${base}/employees`,  icon: <MdOutlinePeopleAlt size={18} /> },
-    { label: "Run Payroll",  href: `${base}/run`,        icon: <MdOutlinePlayCircle size={18} /> },
-    { label: "All Payslips", href: `${base}/payslips`,   icon: <TbFileInvoice size={18} /> },
+    { label: "Dashboard",     href: `${base}/overview`,  icon: <MdOutlineDashboard size={18} /> },
+    { label: "Employees",     href: `${base}/employees`, icon: <MdOutlinePeopleAlt size={18} /> },
+    { label: "Run Payroll",   href: `${base}/run`,       icon: <MdOutlinePlayCircle size={18} /> },
+    { label: "Payslip Entry", href: `${base}/entry`,     icon: <TbFilePlus size={18} /> },
+    { label: "All Payslips",  href: `${base}/payslips`,  icon: <TbFileInvoice size={18} /> },
   ];
 
   const employeeItems = [

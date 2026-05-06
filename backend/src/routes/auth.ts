@@ -60,11 +60,53 @@ router.get("/me", authenticate, async (req: AuthRequest, res: Response) => {
     include: [{ model: Role, as: "role" }],
     attributes: { exclude: ["passwordHash"] },
   });
-  if (!user) {
-    res.status(404).json({ message: "User not found" });
+  if (!user) { res.status(404).json({ message: "User not found" }); return; }
+  res.json(user);
+});
+
+// Update own profile (editable fields only — companyEmail, role, status not changeable by self)
+router.put("/me", authenticate, async (req: AuthRequest, res: Response) => {
+  const allowed = [
+    "fullName", "personalEmail",
+    "pan", "employmentType", "compensationType",
+    "workSchedule", "remotePosition", "workLocation", "paymentFrequency",
+  ];
+  const update: Record<string, unknown> = {};
+  for (const key of allowed) {
+    if (req.body[key] !== undefined) update[key] = req.body[key];
+  }
+  if (Object.keys(update).length === 0) {
+    res.status(400).json({ message: "No valid fields to update" });
     return;
   }
-  res.json(user);
+  const user = await User.findByPk(req.user!.userId);
+  if (!user) { res.status(404).json({ message: "User not found" }); return; }
+  await user.update(update);
+  const fresh = await User.findByPk(req.user!.userId, {
+    include: [{ model: Role, as: "role" }],
+    attributes: { exclude: ["passwordHash"] },
+  });
+  res.json(fresh);
+});
+
+// Change own password
+router.put("/me/password", authenticate, async (req: AuthRequest, res: Response) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    res.status(400).json({ message: "currentPassword and newPassword are required" });
+    return;
+  }
+  if (newPassword.length < 8) {
+    res.status(400).json({ message: "New password must be at least 8 characters" });
+    return;
+  }
+  const user = await User.findByPk(req.user!.userId);
+  if (!user) { res.status(404).json({ message: "User not found" }); return; }
+  const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!valid) { res.status(401).json({ message: "Current password is incorrect" }); return; }
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+  await user.update({ passwordHash });
+  res.json({ message: "Password changed successfully" });
 });
 
 export default router;

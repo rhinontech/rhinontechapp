@@ -276,6 +276,11 @@ export function PeopleDirectory() {
   const [message, setMessage] = useState("");
 
   const token = Cookies.get("authToken");
+  const permissions: string[] = (() => {
+    try { return JSON.parse(Cookies.get("permissions") || "[]"); }
+    catch { return []; }
+  })();
+  const canManage = permissions.includes("employees:read");
 
   const fetchEmployees = async () => {
     setLoading(true);
@@ -307,12 +312,14 @@ export function PeopleDirectory() {
 
   useEffect(() => {
     fetchEmployees();
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/roles`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => r.json())
-      .then((data) => setRoles(Array.isArray(data) ? data : []))
-      .catch(() => setRoles([]));
+    if (canManage) {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/roles`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((r) => r.json())
+        .then((data) => setRoles(Array.isArray(data) ? data : []))
+        .catch(() => setRoles([]));
+    }
   }, []);
 
   const filtered = useMemo(() => {
@@ -400,8 +407,8 @@ export function PeopleDirectory() {
       <main className="flex min-h-0 flex-col bg-stone-50 rounded-xl w-full h-full overflow-hidden">
         <div className="sticky top-0 bg-stone-50 z-10 flex items-center justify-between gap-4 h-16 px-5 border-b">
           <div>
-            <h1 className="text-sm font-semibold tracking-tight">Employees</h1>
-            <p className="text-xs text-gray-500">{employees.length} employees</p>
+            <h1 className="text-sm font-semibold tracking-tight">Team</h1>
+            <p className="text-xs text-gray-500">{employees.length} members</p>
           </div>
           <div className="flex items-center gap-3">
             <div className="relative">
@@ -413,13 +420,15 @@ export function PeopleDirectory() {
                 className="pl-9 pr-4 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
               />
             </div>
-            <button
-              onClick={openCreate}
-              className="inline-flex items-center gap-2 rounded-lg bg-stone-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-stone-800"
-            >
-              Add employee
-              <TbPlus size={14} />
-            </button>
+            {canManage && (
+              <button
+                onClick={openCreate}
+                className="inline-flex items-center gap-2 rounded-lg bg-stone-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-stone-800"
+              >
+                Add member
+                <TbPlus size={14} />
+              </button>
+            )}
             {!isPreviewExpanded && (
               <button
                 onClick={() => setIsPreviewExpanded(true)}
@@ -492,11 +501,11 @@ export function PeopleDirectory() {
             <div className="sticky top-0 w-full flex items-center justify-between h-16 px-5 border-b bg-white z-10">
               <div className="flex items-center gap-4 self-stretch">
                 <p className="flex self-stretch items-center text-md font-medium tracking-tight border-b-2 border-blue-600 text-black -mb-px">
-                  {mode === "create" ? "Add Employee" : "Employee Details"}
+                  {mode === "create" ? "Add Member" : "Member Details"}
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                {mode === "view" && selectedEmployee && (
+                {canManage && mode === "view" && selectedEmployee && (
                   <button
                     onClick={openEdit}
                     className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
@@ -518,6 +527,7 @@ export function PeopleDirectory() {
               <div className="flex-1 overflow-auto p-5">
                 {selectedEmployee ? (
                   <div className="space-y-5">
+                    {/* Avatar + name — always visible */}
                     <div className="flex items-center gap-4">
                       <div className="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center text-white text-lg font-semibold">
                         {initials(selectedEmployee.fullName)}
@@ -525,54 +535,71 @@ export function PeopleDirectory() {
                       <div>
                         <h2 className="text-lg font-semibold text-gray-900">{selectedEmployee.fullName}</h2>
                         <p className="text-sm text-gray-500">{selectedEmployee.companyEmail}</p>
+                        <p className="text-xs text-gray-400">{selectedEmployee.role?.name} · {selectedEmployee.department}</p>
                       </div>
                     </div>
+
+                    {/* Public info — visible to all */}
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <Detail label="Status" value={<StatusBadge status={selectedEmployee.status} />} />
-                      <Detail label="Legal name" value={selectedEmployee.legalName || selectedEmployee.fullName} />
-                      <Detail label="PAN" value={selectedEmployee.pan || "-"} />
                       <Detail label="Role title" value={selectedEmployee.roleTitle || selectedEmployee.role?.name || "-"} />
-                      <Detail label="Employment type" value={selectedEmployee.employmentType || "-"} />
-                      <Detail label="Compensation type" value={selectedEmployee.compensationType || "-"} />
-                      <Detail label="Work schedule" value={selectedEmployee.workSchedule || "-"} />
-                      <Detail label="Remote position" value={selectedEmployee.remotePosition ? "Yes" : "No"} />
-                      <Detail label="Joining date" value={formatDate(selectedEmployee.joiningDate)} />
+                      <Detail label="Department" value={selectedEmployee.department} />
                       <Detail label="Work location" value={selectedEmployee.workLocation || "-"} />
-                      <Detail label="Annual compensation" value={money(selectedEmployee.annualCompensation)} />
-                      <Detail label="Annual variable pay" value={money(selectedEmployee.annualVariablePay)} />
+                      <Detail label="Employment type" value={selectedEmployee.employmentType || "-"} />
+                      <Detail label="Work schedule" value={selectedEmployee.workSchedule || "-"} />
+                      <Detail label="Remote" value={selectedEmployee.remotePosition ? "Yes" : "No"} />
+                      <Detail label="Joining date" value={formatDate(selectedEmployee.joiningDate)} />
                     </div>
-                    <Section title="Past Payroll">
-                      <Detail label="Financial year" value={selectedEmployee.pastPayrollFinancialYear || "FY 2026 - 2027"} />
-                      <Detail label="Past taxable salary" value={money(selectedEmployee.pastTaxableSalary)} />
-                      <Detail label="Past TDS deducted" value={money(selectedEmployee.pastTdsDeducted)} />
-                    </Section>
-                    <Section title="Salary Structure">
-                      <Detail label="Basic salary" value={money(selectedEmployee.basicSalary)} />
-                      <Detail label="HRA" value={money(selectedEmployee.hra)} />
-                      <Detail label="Transport" value={money(selectedEmployee.ta)} />
-                      <Detail label="Medical" value={money(selectedEmployee.medicalAllowance)} />
-                      <Detail label="Other allowances" value={money(selectedEmployee.otherAllowances)} />
-                      <Detail label="Payment frequency" value={selectedEmployee.paymentFrequency || "Monthly"} />
-                    </Section>
-                    <Section title="Payment Information">
-                      <Detail label="Account number" value={selectedEmployee.bankAccountNumber || "-"} />
-                      <Detail label="IFSC code" value={selectedEmployee.bankIfscCode || "-"} />
-                      <Detail label="Beneficiary name" value={selectedEmployee.bankBeneficiaryName || "-"} />
-                    </Section>
-                    <Section title="Statutory">
-                      <Detail label="PF UAN number" value={selectedEmployee.pfUanNumber || "Employee has not been opted in for PF"} />
-                      <Detail label="ESIC IP number" value={selectedEmployee.esicIpNumber || "Employee has not been opted in for ESIC"} />
-                      <Detail label="Labour Welfare Fund" value={selectedEmployee.labourWelfareFundEnabled ? "Enabled" : "Disabled"} />
-                      <Detail label="National Pension System" value={selectedEmployee.npsEnabled ? "Enabled" : "Disabled"} />
-                      <Detail label="Professional Tax" value={selectedEmployee.professionalTaxEnabled === false ? "Disabled" : "Enabled"} />
-                    </Section>
+
+                    {/* Admin-only sections */}
+                    {canManage && (
+                      <>
+                        <Section title="Personal & Legal">
+                          <Detail label="Legal name" value={selectedEmployee.legalName || selectedEmployee.fullName} />
+                          <Detail label="Personal email" value={selectedEmployee.personalEmail || "-"} />
+                          <Detail label="Date of birth" value={selectedEmployee.dateOfBirth ? formatDate(selectedEmployee.dateOfBirth) : "-"} />
+                          <Detail label="PAN" value={selectedEmployee.pan || "-"} />
+                        </Section>
+                        <Section title="Compensation">
+                          <Detail label="Compensation type" value={selectedEmployee.compensationType || "-"} />
+                          <Detail label="Payment frequency" value={selectedEmployee.paymentFrequency || "Monthly"} />
+                          <Detail label="Annual compensation" value={money(selectedEmployee.annualCompensation)} />
+                          <Detail label="Annual variable pay" value={money(selectedEmployee.annualVariablePay)} />
+                        </Section>
+                        <Section title="Salary Structure">
+                          <Detail label="Basic salary" value={money(selectedEmployee.basicSalary)} />
+                          <Detail label="HRA" value={money(selectedEmployee.hra)} />
+                          <Detail label="Transport" value={money(selectedEmployee.ta)} />
+                          <Detail label="Medical" value={money(selectedEmployee.medicalAllowance)} />
+                          <Detail label="Other allowances" value={money(selectedEmployee.otherAllowances)} />
+                        </Section>
+                        <Section title="Past Payroll">
+                          <Detail label="Financial year" value={selectedEmployee.pastPayrollFinancialYear || "FY 2026 - 2027"} />
+                          <Detail label="Past taxable salary" value={money(selectedEmployee.pastTaxableSalary)} />
+                          <Detail label="Past TDS deducted" value={money(selectedEmployee.pastTdsDeducted)} />
+                        </Section>
+                        <Section title="Payment Information">
+                          <Detail label="Account number" value={selectedEmployee.bankAccountNumber || "-"} />
+                          <Detail label="IFSC code" value={selectedEmployee.bankIfscCode || "-"} />
+                          <Detail label="Beneficiary name" value={selectedEmployee.bankBeneficiaryName || "-"} />
+                        </Section>
+                        <Section title="Statutory">
+                          <Detail label="PF UAN number" value={selectedEmployee.pfUanNumber || "Not opted in"} />
+                          <Detail label="ESIC IP number" value={selectedEmployee.esicIpNumber || "Not opted in"} />
+                          <Detail label="Labour Welfare Fund" value={selectedEmployee.labourWelfareFundEnabled ? "Enabled" : "Disabled"} />
+                          <Detail label="National Pension System" value={selectedEmployee.npsEnabled ? "Enabled" : "Disabled"} />
+                          <Detail label="Professional Tax" value={selectedEmployee.professionalTaxEnabled === false ? "Disabled" : "Enabled"} />
+                        </Section>
+                      </>
+                    )}
+
                     {message && <p className={cn("text-sm", message.includes("Unable") ? "text-red-600" : "text-green-600")}>{message}</p>}
                   </div>
                 ) : (
                   <div className="flex items-center justify-center h-full text-gray-400 text-sm">Select an employee.</div>
                 )}
               </div>
-            ) : (
+            ) : canManage ? (
               <form onSubmit={submitEmployee} className="flex-1 overflow-auto p-5 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
@@ -645,10 +672,14 @@ export function PeopleDirectory() {
                     Cancel
                   </button>
                   <button type="submit" disabled={saving} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60">
-                    {saving ? "Saving..." : mode === "create" ? "Create employee" : "Save changes"}
+                    {saving ? "Saving..." : mode === "create" ? "Add member" : "Save changes"}
                   </button>
                 </div>
               </form>
+            ) : (
+              <div className="flex items-center justify-center flex-1 text-sm text-gray-400">
+                Select a team member to view their profile.
+              </div>
             )}
           </div>
         )}

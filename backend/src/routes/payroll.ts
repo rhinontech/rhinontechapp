@@ -52,6 +52,7 @@ router.get("/admin/employees", authorize("payroll:write"), async (_req: AuthRequ
       "id", "fullName", "companyEmail", "department", "joiningDate",
       "employmentType", "workLocation",
       "basicSalary", "hra", "ta", "medicalAllowance", "otherAllowances",
+      "pfEnabled", "ptAmount", "tdsAmount",
     ],
     include: [{ model: Role, as: "role", attributes: ["name", "slug"] }],
     order: [["fullName", "ASC"]],
@@ -71,7 +72,8 @@ router.get("/admin/employees/:userId", authorize("payroll:write"), async (req: A
 
 // Set / update an employee's salary structure
 router.put("/admin/employees/:userId/salary", authorize("payroll:write"), async (req: AuthRequest, res: Response) => {
-  const { basicSalary, hra = 0, ta = 0, medicalAllowance = 0, otherAllowances = 0 } = req.body;
+  const { basicSalary, hra = 0, ta = 0, medicalAllowance = 0, otherAllowances = 0,
+          pfEnabled = true, ptAmount = 200, tdsAmount = 0 } = req.body;
   if (!basicSalary || basicSalary <= 0) {
     res.status(400).json({ message: "basicSalary is required and must be > 0" });
     return;
@@ -79,8 +81,8 @@ router.put("/admin/employees/:userId/salary", authorize("payroll:write"), async 
   const user = await User.findByPk(req.params.userId);
   if (!user) { res.status(404).json({ message: "Employee not found" }); return; }
 
-  await user.update({ basicSalary, hra, ta, medicalAllowance, otherAllowances });
-  res.json({ message: "Salary updated", basicSalary, hra, ta, medicalAllowance, otherAllowances });
+  await user.update({ basicSalary, hra, ta, medicalAllowance, otherAllowances, pfEnabled, ptAmount, tdsAmount });
+  res.json({ message: "Salary updated" });
 });
 
 // Update employee HR details (employment type, PAN, etc.)
@@ -189,10 +191,10 @@ router.post("/admin/run", authorize("payroll:write"), async (req: AuthRequest, r
     const otherAllowances  = Number(emp.otherAllowances ?? 0);
 
     const grossPay        = basicSalary + hra + ta + medicalAllowance + otherAllowances;
-    const pfEmployee      = Math.round(basicSalary * 0.12 * 100) / 100;
+    const pfEmployee      = (emp as any).pfEnabled !== false ? Math.round(basicSalary * 0.12 * 100) / 100 : 0;
     const pfEmployer      = pfEmployee;
-    const professionalTax = 200; // ₹200/month standard
-    const tds             = 0;   // simplified; can be calculated from annual income
+    const professionalTax = Number((emp as any).ptAmount  ?? 200);
+    const tds             = Number((emp as any).tdsAmount ?? 0);
     const otherDeductions = 0;
     const totalDeductions = pfEmployee + professionalTax + tds + otherDeductions;
     const netPay          = grossPay - totalDeductions;
@@ -226,6 +228,73 @@ router.post("/admin/run", authorize("payroll:write"), async (req: AuthRequest, r
     message: `Payroll run complete. ${eligible.length} payslips generated.`,
     payroll: { id: payroll.id, month, year, status: payroll.status, totalGross, totalNet, count: eligible.length },
   });
+});
+
+// Manually create a single payslip for one employee (backfill historical or ad-hoc)
+router.post("/admin/payslips/manual", authorize("payroll:write"), async (req: AuthRequest, res: Response) => {
+  const {
+    userId, month, year,
+    basicSalary, hra = 0, ta = 0, medicalAllowance = 0, otherAllowances = 0,
+    pfEnabled = true, ptAmount = 200, tdsAmount = 0,
+  } = req.body;
+
+  if (!userId || !month || !year || !basicSalary || Number(basicSalary) <= 0) {
+    res.status(400).json({ message: "userId, month, year, and basicSalary are required" });
+    return;
+  }
+
+  const user = await User.findByPk(userId);
+  if (!user) { res.status(404).json({ message: "Employee not found" }); return; }
+
+  // Prevent duplicate payslip for same employee + period
+  const existingSlip = await Payslip.findOne({
+    include: [{ model: Payroll, as: "payroll", where: { month, year }, required: true }],
+    where: { userId },
+  });
+  if (existingSlip) {
+    res.status(409).json({ message: `A payslip for this employee already exists for ${month}/${year}` });
+    return;
+  }
+
+  // Find or create a Payroll record for this period
+  const [payroll] = await Payroll.findOrCreate({
+    where: { month, year },
+    defaults: { month, year, processedById: req.user!.userId, status: "draft" },
+  });
+
+  const gross          = Number(basicSalary) + Number(hra) + Number(ta) + Number(medicalAllowance) + Number(otherAllowances);
+  const pfEmployee     = pfEnabled ? Math.round(Number(basicSalary) * 0.12 * 100) / 100 : 0;
+  const professionalTax = Number(ptAmount);
+  const tds             = Number(tdsAmount);
+  const totalDeductions = pfEmployee + professionalTax + tds;
+  const netPay          = gross - totalDeductions;
+
+  const payslip = await Payslip.create({
+    payrollId:       payroll.id,
+    userId,
+    basicSalary:     Number(basicSalary),
+    hra:             Number(hra),
+    ta:              Number(ta),
+    medicalAllowance: Number(medicalAllowance),
+    otherAllowances: Number(otherAllowances),
+    grossPay:        gross,
+    pfEmployee,
+    pfEmployer:      pfEmployee,
+    tds,
+    professionalTax,
+    otherDeductions: 0,
+    totalDeductions,
+    netPay,
+    status: "paid",
+  });
+
+  // Keep payroll totals in sync
+  const allSlips = await Payslip.findAll({ where: { payrollId: payroll.id } });
+  const totalGross = allSlips.reduce((s, p) => s + Number(p.grossPay), 0);
+  const totalNet   = allSlips.reduce((s, p) => s + Number(p.netPay), 0);
+  await payroll.update({ totalGross, totalNet });
+
+  res.status(201).json({ message: "Payslip created", payslip, employeeName: user.fullName });
 });
 
 // Mark payroll run as paid (all payslips → paid)

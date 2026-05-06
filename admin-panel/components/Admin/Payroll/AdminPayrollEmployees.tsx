@@ -40,6 +40,9 @@ interface Employee {
   ta?: number;
   medicalAllowance?: number;
   otherAllowances?: number;
+  pfEnabled?: boolean;
+  ptAmount?: number;
+  tdsAmount?: number;
   role?: { name: string };
 }
 
@@ -49,6 +52,9 @@ interface SalaryForm {
   ta: string;
   medicalAllowance: string;
   otherAllowances: string;
+  pfEnabled: boolean;
+  ptAmount: string;
+  tdsAmount: string;
 }
 
 type PanelMode = "view" | "edit";
@@ -65,11 +71,16 @@ function calcGross(f: SalaryForm) {
   );
 }
 
+function calcDeductions(f: SalaryForm) {
+  const pf  = f.pfEnabled ? Math.round(Number(f.basicSalary || 0) * 0.12) : 0;
+  const pt  = Number(f.ptAmount  || 0);
+  const tds = Number(f.tdsAmount || 0);
+  return { pf, pt, tds, total: pf + pt + tds };
+}
+
 function calcNet(f: SalaryForm) {
-  const gross = calcGross(f);
-  const pf = Math.round(Number(f.basicSalary || 0) * 0.12);
-  const pt = 200;
-  return gross - pf - pt;
+  const { total } = calcDeductions(f);
+  return calcGross(f) - total;
 }
 
 export function AdminPayrollEmployees() {
@@ -80,7 +91,7 @@ export function AdminPayrollEmployees() {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [mode, setMode] = useState<PanelMode>("view");
   const [isPreviewExpanded, setIsPreviewExpanded] = useState(true);
-  const [form, setForm] = useState<SalaryForm>({ basicSalary: "", hra: "", ta: "", medicalAllowance: "", otherAllowances: "" });
+  const [form, setForm] = useState<SalaryForm>({ basicSalary: "", hra: "", ta: "", medicalAllowance: "", otherAllowances: "", pfEnabled: true, ptAmount: "200", tdsAmount: "0" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -131,11 +142,14 @@ export function AdminPayrollEmployees() {
     setMode("edit");
     setError("");
     setForm({
-      basicSalary:      String(selectedEmployee.basicSalary  ?? ""),
-      hra:              String(selectedEmployee.hra           ?? ""),
-      ta:               String(selectedEmployee.ta            ?? ""),
-      medicalAllowance: String(selectedEmployee.medicalAllowance ?? ""),
-      otherAllowances:  String(selectedEmployee.otherAllowances  ?? ""),
+      basicSalary:      String(selectedEmployee.basicSalary      ?? ""),
+      hra:              String(selectedEmployee.hra               ?? ""),
+      ta:               String(selectedEmployee.ta                ?? ""),
+      medicalAllowance: String(selectedEmployee.medicalAllowance  ?? ""),
+      otherAllowances:  String(selectedEmployee.otherAllowances   ?? ""),
+      pfEnabled:        selectedEmployee.pfEnabled  !== false,
+      ptAmount:         String(selectedEmployee.ptAmount  ?? 200),
+      tdsAmount:        String(selectedEmployee.tdsAmount ?? 0),
     });
   };
 
@@ -162,6 +176,9 @@ export function AdminPayrollEmployees() {
         ta:               Number(form.ta || 0),
         medicalAllowance: Number(form.medicalAllowance || 0),
         otherAllowances:  Number(form.otherAllowances || 0),
+        pfEnabled:        form.pfEnabled,
+        ptAmount:         Number(form.ptAmount  || 0),
+        tdsAmount:        Number(form.tdsAmount || 0),
       }),
     });
     setSaving(false);
@@ -187,9 +204,10 @@ export function AdminPayrollEmployees() {
   const selectedGross = selectedHasSalary
     ? Number(selectedEmployee.basicSalary) + Number(selectedEmployee.hra ?? 0) + Number(selectedEmployee.ta ?? 0) + Number(selectedEmployee.medicalAllowance ?? 0) + Number(selectedEmployee.otherAllowances ?? 0)
     : 0;
-  const selectedNet = selectedHasSalary
-    ? selectedGross - Math.round(Number(selectedEmployee.basicSalary) * 0.12) - 200
-    : 0;
+  const selectedPF  = selectedHasSalary && selectedEmployee?.pfEnabled !== false ? Math.round(Number(selectedEmployee!.basicSalary) * 0.12) : 0;
+  const selectedPT  = selectedHasSalary ? Number(selectedEmployee?.ptAmount  ?? 200) : 0;
+  const selectedTDS = selectedHasSalary ? Number(selectedEmployee?.tdsAmount ?? 0)   : 0;
+  const selectedNet = selectedGross - selectedPF - selectedPT - selectedTDS;
 
   return (
     <div className="flex min-h-0 gap-2 h-full overflow-hidden">
@@ -243,9 +261,10 @@ export function AdminPayrollEmployees() {
                     const gross = hasSalary
                       ? (Number(emp.basicSalary) + Number(emp.hra ?? 0) + Number(emp.ta ?? 0) + Number(emp.medicalAllowance ?? 0) + Number(emp.otherAllowances ?? 0))
                       : null;
-                    const net = hasSalary && gross
-                      ? gross - Math.round(Number(emp.basicSalary) * 0.12) - 200
-                      : null;
+                    const empPF  = hasSalary && emp.pfEnabled !== false ? Math.round(Number(emp.basicSalary) * 0.12) : 0;
+                    const empPT  = hasSalary ? Number(emp.ptAmount  ?? 200) : 0;
+                    const empTDS = hasSalary ? Number(emp.tdsAmount ?? 0)   : 0;
+                    const net = hasSalary && gross ? gross - empPF - empPT - empTDS : null;
 
                     return (
                       <tr
@@ -407,12 +426,16 @@ export function AdminPayrollEmployees() {
                         <strong>{selectedHasSalary ? INR(selectedGross) : "-"}</strong>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-500">PF (12%)</span>
-                        <strong className="text-red-600">{selectedHasSalary ? `-${INR(Math.round(Number(selectedEmployee.basicSalary) * 0.12))}` : "-"}</strong>
+                        <span className="text-gray-500">PF {selectedEmployee?.pfEnabled !== false ? "(12%)" : "(disabled)"}</span>
+                        <strong className={selectedPF > 0 ? "text-red-600" : "text-gray-400"}>{selectedHasSalary ? `-${INR(selectedPF)}` : "-"}</strong>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500">PT</span>
-                        <strong className="text-red-600">{selectedHasSalary ? "-₹200" : "-"}</strong>
+                        <strong className={selectedPT > 0 ? "text-red-600" : "text-gray-400"}>{selectedHasSalary ? `-${INR(selectedPT)}` : "-"}</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">TDS</span>
+                        <strong className={selectedTDS > 0 ? "text-red-600" : "text-gray-400"}>{selectedHasSalary ? `-${INR(selectedTDS)}` : "-"}</strong>
                       </div>
                       <div className="flex justify-between border-t pt-2">
                         <span className="text-gray-700">Estimated net</span>
@@ -451,23 +474,65 @@ export function AdminPayrollEmployees() {
                   ))}
                 </div>
 
+                {/* Deductions */}
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Deductions</p>
+                  <label className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3 cursor-pointer">
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">PF (12% of Basic)</p>
+                      <p className="text-xs text-gray-400 mt-0.5">Provident Fund — employee contribution</p>
+                    </div>
+                    <div
+                      className={cn("w-9 h-5 rounded-full transition-colors flex items-center px-0.5 shrink-0 cursor-pointer", form.pfEnabled ? "bg-blue-600" : "bg-gray-200")}
+                      onClick={() => setForm((f) => ({ ...f, pfEnabled: !f.pfEnabled }))}
+                    >
+                      <div className={cn("w-4 h-4 bg-white rounded-full shadow-sm transition-transform", form.pfEnabled ? "translate-x-4" : "translate-x-0")} />
+                    </div>
+                  </label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+                      Professional Tax (₹/mo)
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">₹</span>
+                        <input type="number" min={0} value={form.ptAmount} onChange={(e) => setForm((f) => ({ ...f, ptAmount: e.target.value }))} className="w-full pl-6 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" placeholder="200" />
+                      </div>
+                    </label>
+                    <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+                      TDS (₹/mo)
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">₹</span>
+                        <input type="number" min={0} value={form.tdsAmount} onChange={(e) => setForm((f) => ({ ...f, tdsAmount: e.target.value }))} className="w-full pl-6 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" placeholder="0" />
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Live preview */}
                 <div className="rounded-lg border border-gray-100 p-4 text-sm space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Gross</span>
-                    <strong>{INR(calcGross(form))}</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">PF (12%)</span>
-                    <strong className="text-red-600">-{INR(Math.round(Number(form.basicSalary || 0) * 0.12))}</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">PT</span>
-                    <strong className="text-red-600">-₹200</strong>
-                  </div>
-                  <div className="flex justify-between border-t pt-2">
-                    <span className="text-gray-700">Estimated net</span>
-                    <strong className="text-green-700">{INR(calcNet(form))}</strong>
-                  </div>
+                  {(() => { const d = calcDeductions(form); return (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Gross</span>
+                        <strong>{INR(calcGross(form))}</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">PF {form.pfEnabled ? "(12%)" : "(off)"}</span>
+                        <strong className={d.pf > 0 ? "text-red-600" : "text-gray-400"}>-{INR(d.pf)}</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">PT</span>
+                        <strong className={d.pt > 0 ? "text-red-600" : "text-gray-400"}>-{INR(d.pt)}</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">TDS</span>
+                        <strong className={d.tds > 0 ? "text-red-600" : "text-gray-400"}>-{INR(d.tds)}</strong>
+                      </div>
+                      <div className="flex justify-between border-t pt-2">
+                        <span className="text-gray-700">Estimated net</span>
+                        <strong className="text-green-700">{INR(calcNet(form))}</strong>
+                      </div>
+                    </>
+                  ); })()}
                 </div>
 
                 {error && <p className="text-xs text-red-500">{error}</p>}
