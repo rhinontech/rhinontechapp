@@ -79,11 +79,11 @@ export function PayslipDetail({ id }: { id: string }) {
         </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 max-w-2xl mx-auto print:shadow-none print:border-0">
+      <div className="bg-white rounded-xl border border-gray-100 max-w-2xl mx-auto print:border-0">
         {/* Header */}
         <div className="px-6 py-5 border-b flex items-center justify-between">
           <div>
-            <p className="text-lg font-bold text-gray-900">Payslip</p>
+            <p className="text-sm font-semibold text-gray-900">Payslip</p>
             <p className="text-sm text-gray-500">{MONTHS[slip.payroll.month - 1]} {slip.payroll.year}</p>
           </div>
           <span className={`px-3 py-1 rounded-full text-xs font-medium ${slip.status === "paid" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
@@ -133,7 +133,7 @@ export function PayslipDetail({ id }: { id: string }) {
         {/* Net Pay */}
         <div className="px-6 py-5 mt-2 bg-gray-900 rounded-b-xl flex items-center justify-between">
           <p className="text-white font-semibold">Net Pay</p>
-          <p className="text-white text-xl font-bold">{fmt(slip.netPay)}</p>
+          <p className="text-white text-base font-semibold">{fmt(slip.netPay)}</p>
         </div>
       </div>
     </div>

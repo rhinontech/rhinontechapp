@@ -36,11 +36,11 @@ const STATUS_STYLE: Record<string, string> = {
 
 function StatCard({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string; sub?: string }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex items-start gap-4">
+    <div className="bg-white rounded-xl border border-gray-100 p-5 flex items-start gap-4">
       <div className="p-2 bg-gray-50 rounded-lg text-gray-600">{icon}</div>
       <div>
         <p className="text-sm text-gray-500">{label}</p>
-        <p className="text-xl font-semibold text-gray-900 mt-0.5">{value}</p>
+        <p className="text-base font-semibold text-gray-900 mt-0.5">{value}</p>
         {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
       </div>
     </div>
@@ -88,7 +88,7 @@ export function AdminPayrollOverview() {
       <div className="sticky top-0 z-10 flex items-center justify-between h-16 px-5 border-b bg-stone-50">
         <div className="flex items-center gap-4">
           <SubNavToggle />
-          <h1 className="text-xl font-bold tracking-tight">Payroll Dashboard</h1>
+          <h1 className="text-base font-semibold tracking-tight">Payroll Dashboard</h1>
         </div>
         <Link
           href={`/${roleSlug}/payroll/run`}
@@ -108,7 +108,7 @@ export function AdminPayrollOverview() {
         </div>
 
         {/* Payroll runs table */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b">
             <p className="font-semibold text-gray-900">Payroll Runs</p>
           </div>

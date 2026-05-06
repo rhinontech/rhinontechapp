@@ -8,7 +8,7 @@ import { MdDashboard, MdOutlineCloud } from "react-icons/md";
 import { FaUserGroup } from "react-icons/fa6";
 import { RiSettings3Fill } from "react-icons/ri";
 import { HiInbox } from "react-icons/hi2";
-import { TbCash } from "react-icons/tb";
+import { TbBriefcase, TbCalendarTime, TbCash } from "react-icons/tb";
 import { BsPinAngleFill, BsPinAngle } from "react-icons/bs";
 import { cn } from "@/lib/utils";
 import { useDashboard } from "../../../Common/DashboardProvider/DashboardProvider";
@@ -62,6 +62,18 @@ export function Sidebar() {
       icon: <TbCash size={20} className="h-5 w-5 flex-shrink-0" />,
       href: `/${roleSlug}/payroll`,
       permission: "payslips:read",
+    },
+    {
+      title: "Work",
+      icon: <TbBriefcase size={20} className="h-5 w-5 flex-shrink-0" />,
+      href: `/${roleSlug}/work`,
+      permission: "dashboard:read",
+    },
+    {
+      title: "Attendance",
+      icon: <TbCalendarTime size={20} className="h-5 w-5 flex-shrink-0" />,
+      href: `/${roleSlug}/attendance`,
+      permission: "dashboard:read",
     },
     {
       title: "Provisioning",

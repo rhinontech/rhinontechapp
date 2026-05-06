@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
 type DashboardContextType = {
@@ -12,17 +12,27 @@ type DashboardContextType = {
 };
 
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
+const SIDEBAR_EXPANDED_STORAGE_KEY = "rhinon_sidebar_expanded";
 
 const isDashboardRoute = (path: string) => /^\/[^/]+\/dashboard$/.test(path);
 
 export function DashboardProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [sidebarExpanded, setSidebarExpanded] = useState(isDashboardRoute(pathname));
+  const [sidebarExpanded, setSidebarExpandedState] = useState(isDashboardRoute(pathname));
   const [isHovering, setIsHovering] = useState(false);
 
   useEffect(() => {
-    setSidebarExpanded(isDashboardRoute(pathname));
-  }, [pathname]);
+    const savedState = window.localStorage.getItem(SIDEBAR_EXPANDED_STORAGE_KEY);
+
+    if (savedState !== null) {
+      setSidebarExpandedState(savedState === "true");
+    }
+  }, []);
+
+  const setSidebarExpanded = useCallback((expanded: boolean) => {
+    window.localStorage.setItem(SIDEBAR_EXPANDED_STORAGE_KEY, String(expanded));
+    setSidebarExpandedState(expanded);
+  }, []);
 
   return (
     <DashboardContext.Provider

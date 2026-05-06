@@ -7,6 +7,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 interface SidebarItemProps {
   icon: React.ReactNode;
@@ -72,24 +73,33 @@ export const SidebarItem = ({
       variant="ghost"
       className={cn(
         "w-full flex justify-between items-center font-normal text-sm transition-all",
-        isActive ? "bg-white shadow" : "hover:bg-gray-50"
+        isActive ? "bg-stone-200" : "hover:bg-stone-200/50"
       )}
       size="sm"
       asChild={!!href}
     >
       {href ? (
-        <a
-          href={href}
-          target={externalLink ? "_blank" : undefined}
-          rel={externalLink ? "noopener noreferrer" : undefined}
-          className="flex w-full items-center justify-between"
-        >
-          <div className="flex items-center">
-            {icon}
-            <span className="ml-2">{label}</span>
-          </div>
-          {externalLink && <ExternalLink className=" w-4" />}
-        </a>
+        externalLink ? (
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex w-full items-center justify-between"
+          >
+            <div className="flex items-center">
+              {icon}
+              <span className="ml-2">{label}</span>
+            </div>
+            <ExternalLink className=" w-4" />
+          </a>
+        ) : (
+          <Link href={href} className="flex w-full items-center justify-between">
+            <div className="flex items-center">
+              {icon}
+              <span className="ml-2">{label}</span>
+            </div>
+          </Link>
+        )
       ) : (
         <div className="flex w-full items-center">
           {icon}

@@ -44,29 +44,29 @@ export function Benefits() {
     <div className="flex flex-col h-full overflow-hidden bg-stone-100 rounded-r-xl">
       <div className="sticky top-0 z-10 flex items-center gap-4 h-16 px-5 border-b bg-stone-100">
         <SubNavToggle />
-        <h1 className="text-xl font-bold tracking-tight">Benefits & Allowances</h1>
+        <h1 className="text-base font-semibold tracking-tight">Benefits & Allowances</h1>
       </div>
 
       <div className="flex-1 overflow-auto p-5">
         {loading ? (
           <p className="text-sm text-gray-400">Loading...</p>
         ) : !latest ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center text-gray-400 text-sm">No benefit data yet.</div>
+          <div className="bg-white rounded-xl border border-gray-100 p-12 text-center text-gray-400 text-sm">No benefit data yet.</div>
         ) : (
           <>
             <p className="text-xs text-gray-400 mb-3">{MONTHS[latest.payroll.month - 1]} {latest.payroll.year}</p>
             <div className="grid grid-cols-2 gap-4 mb-8 xl:grid-cols-4">
               {items.map((item) => (
-                <div key={item.label} className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                <div key={item.label} className="bg-white rounded-xl border border-gray-100 p-5">
                   <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-3 ${item.color}`}>
                     <item.icon size={18} />
                   </div>
                   <p className="text-sm text-gray-500 leading-snug">{item.label}</p>
-                  <p className="text-xl font-semibold text-gray-900 mt-1">₹{item.value.toLocaleString("en-IN")}</p>
+                  <p className="text-base font-semibold text-gray-900 mt-1">₹{item.value.toLocaleString("en-IN")}</p>
                 </div>
               ))}
             </div>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
               <div className="px-5 py-4 border-b"><p className="font-medium text-gray-900">Allowance History</p></div>
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 text-gray-500 text-xs uppercase">

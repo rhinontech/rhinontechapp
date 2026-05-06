@@ -54,7 +54,7 @@ function PayrollLayoutContent({ children }: { children: React.ReactNode }) {
   if (permissions === null) {
     return (
       <div className="flex w-full h-full">
-        <aside className="w-[20%] min-w-[180px] bg-stone-100 rounded-l-xl border-r shadow-md" />
+        <aside className="w-[20%] min-w-[180px] bg-stone-100 rounded-l-xl border-r" />
         <main className="w-full h-full overflow-hidden bg-stone-50" />
       </div>
     );

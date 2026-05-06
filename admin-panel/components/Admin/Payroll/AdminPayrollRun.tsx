@@ -80,14 +80,14 @@ export function AdminPayrollRun() {
       <div className="flex flex-col h-full bg-stone-50 rounded-r-xl overflow-hidden">
         <div className="sticky top-0 z-10 flex items-center gap-4 h-16 px-5 border-b bg-stone-50">
           <SubNavToggle />
-          <h1 className="text-xl font-bold tracking-tight">Run Payroll</h1>
+          <h1 className="text-base font-semibold tracking-tight">Run Payroll</h1>
         </div>
         <div className="flex-1 flex items-center justify-center p-6">
-          <div className="bg-white rounded-2xl border border-green-100 shadow-sm p-10 text-center max-w-md w-full">
+          <div className="bg-white rounded-2xl border border-green-100 p-10 text-center max-w-md w-full">
             <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-5">
               <TbCheck size={32} className="text-green-600" />
             </div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-1">Payroll Run Complete</h2>
+            <h2 className="text-sm font-semibold text-gray-900 mb-1">Payroll Run Complete</h2>
             <p className="text-sm text-gray-500 mb-6">{result.message}</p>
             <div className="grid grid-cols-3 gap-4 mb-6 text-left">
               <div className="bg-gray-50 rounded-lg p-3">
@@ -127,13 +127,13 @@ export function AdminPayrollRun() {
     <div className="flex flex-col h-full bg-stone-50 rounded-r-xl overflow-hidden">
       <div className="sticky top-0 z-10 flex items-center gap-4 h-16 px-5 border-b bg-stone-50">
         <SubNavToggle />
-        <h1 className="text-xl font-bold tracking-tight">Run Payroll</h1>
+        <h1 className="text-base font-semibold tracking-tight">Run Payroll</h1>
       </div>
 
       <div className="flex-1 overflow-auto p-6">
         <div className="max-w-3xl">
           {/* Period selector */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-5">
+          <div className="bg-white rounded-xl border border-gray-100 p-6 mb-5">
             <p className="font-semibold text-gray-900 mb-4">Select Payroll Period</p>
             <div className="flex gap-4">
               <div className="flex flex-col gap-1.5">
@@ -162,7 +162,7 @@ export function AdminPayrollRun() {
           </div>
 
           {/* Preview — eligible employees */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mb-5">
+          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden mb-5">
             <div className="px-5 py-4 border-b flex items-center justify-between">
               <p className="font-semibold text-gray-900">Payslips to be generated</p>
               <span className="text-sm text-gray-500">{eligible.length} employee{eligible.length !== 1 ? "s" : ""}</span>

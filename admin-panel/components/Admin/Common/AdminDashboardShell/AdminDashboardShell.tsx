@@ -12,9 +12,9 @@ export function AdminDashboardShell({
   return (
     <div className="flex h-screen w-full overflow-hidden bg-stone-200">
       <Sidebar />
-      <main className="flex flex-col m-2 gap-2 w-full">
+      <main className="flex min-h-0 min-w-0 flex-col m-2 gap-2 w-full">
         <TrialBanner />
-        <div className={`flex-1 h-full ${className}`}>{children}</div>
+        <div className={`min-h-0 flex-1 overflow-hidden ${className ?? ""}`}>{children}</div>
       </main>
     </div>
   );

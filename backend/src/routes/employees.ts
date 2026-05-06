@@ -27,6 +27,52 @@ router.get("/:id", authorize("employees:read"), async (req: AuthRequest, res: Re
   res.json(employee);
 });
 
+const employeeEditableFields = [
+  "fullName",
+  "personalEmail",
+  "roleId",
+  "department",
+  "status",
+  "dateOfBirth",
+  "pan",
+  "employmentType",
+  "compensationType",
+  "workSchedule",
+  "remotePosition",
+  "workLocation",
+  "paymentFrequency",
+  "legalName",
+  "roleTitle",
+  "annualCompensation",
+  "annualVariablePay",
+  "pastPayrollFinancialYear",
+  "pastTaxableSalary",
+  "pastTdsDeducted",
+  "bankAccountNumber",
+  "bankIfscCode",
+  "bankBeneficiaryName",
+  "pfUanNumber",
+  "esicIpNumber",
+  "labourWelfareFundEnabled",
+  "npsEnabled",
+  "professionalTaxEnabled",
+  "basicSalary",
+  "hra",
+  "ta",
+  "medicalAllowance",
+  "otherAllowances",
+] as const;
+
+function employeePayload(body: Record<string, any>) {
+  const payload: Record<string, any> = {};
+  for (const field of employeeEditableFields) {
+    if (body[field] !== undefined) payload[field] = body[field];
+  }
+  if (body.joiningDate) payload.joiningDate = new Date(body.joiningDate);
+  if (body.dateOfBirth) payload.dateOfBirth = new Date(body.dateOfBirth);
+  return payload;
+}
+
 router.post("/", authorize("employees:write"), async (req: AuthRequest, res: Response) => {
   const { fullName, personalEmail, roleId, department, joiningDate, password } = req.body;
 
@@ -43,12 +89,13 @@ router.post("/", authorize("employees:write"), async (req: AuthRequest, res: Res
   const employee = await User.create({
     fullName,
     personalEmail,
-    companyEmail,
-    passwordHash,
     roleId,
     department,
     joiningDate: new Date(joiningDate),
-    status: "active",
+    companyEmail,
+    passwordHash,
+    status: req.body.status ?? "active",
+    ...employeePayload(req.body),
   });
 
   res.status(201).json({
@@ -63,8 +110,7 @@ router.put("/:id", authorize("employees:write"), async (req: AuthRequest, res: R
     res.status(404).json({ message: "Employee not found" });
     return;
   }
-  const { fullName, roleId, department, status } = req.body;
-  await employee.update({ fullName, roleId, department, status });
+  await employee.update(employeePayload(req.body));
   res.json({ ...employee.toJSON(), passwordHash: undefined });
 });
 

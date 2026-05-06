@@ -217,7 +217,7 @@ export default function Inbox() {
   const selectedThread = selectedEmail?.thread || (selectedEmail ? [selectedEmail] : []);
 
   return (
-    <div className="flex h-full w-full overflow-hidden rounded-xl bg-white shadow-md">
+    <div className="flex h-full w-full overflow-hidden rounded-xl bg-stone-50">
       <aside className="flex h-full w-56 shrink-0 flex-col border-r bg-stone-50 p-3">
         <Button className="mb-4 justify-start gap-2" onClick={() => setShowCompose(true)}>
           <PenLine className="h-4 w-4" />
@@ -248,7 +248,7 @@ export default function Inbox() {
       <section className="flex h-full w-[420px] shrink-0 flex-col border-r">
         <div className="flex h-16 items-center gap-3 border-b px-4">
           <Mail className="h-5 w-5 text-stone-700" />
-          <h1 className="text-xl font-bold">Mail</h1>
+          <h1 className="text-base font-semibold">Mail</h1>
           <Button variant="ghost" size="sm" className="ml-auto" onClick={fetchEmails}>
             <RefreshCcw className="h-4 w-4" />
           </Button>
@@ -312,7 +312,7 @@ export default function Inbox() {
           <>
             <header className="flex min-h-16 items-center gap-2 border-b px-5">
               <div className="min-w-0 flex-1">
-                <h2 className="truncate text-lg font-bold">{selectedEmail.subject}</h2>
+                <h2 className="truncate text-sm font-semibold">{selectedEmail.subject}</h2>
                 <p className="text-xs text-stone-500">
                   {selectedEmail.fromName} · {formatTime(selectedEmail.sentAt)}
                 </p>
@@ -345,7 +345,7 @@ export default function Inbox() {
 
             <div className="flex-1 overflow-auto bg-stone-50 p-5">
               {selectedThread.map((message) => (
-                <article key={message.id} className="mb-4 rounded-lg border bg-white p-4 shadow-sm">
+                <article key={message.id} className="mb-4 rounded-lg border bg-white p-4">
                   <div className="mb-4 flex items-start gap-3">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-stone-900 text-sm font-semibold text-white">
                       {initials(message.fromName)}
@@ -382,7 +382,7 @@ export default function Inbox() {
       </main>
 
       {showCompose && (
-        <div className="absolute bottom-6 right-6 z-20 flex w-[520px] flex-col overflow-hidden rounded-lg border bg-white shadow-2xl">
+        <div className="absolute bottom-6 right-6 z-20 flex w-[520px] flex-col overflow-hidden rounded-lg border bg-white">
           <div className="flex h-11 items-center justify-between bg-stone-900 px-4 text-sm font-medium text-white">
             New Message
             <button onClick={() => setShowCompose(false)} className="rounded px-2 py-1 hover:bg-white/10">

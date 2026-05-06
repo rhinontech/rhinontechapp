@@ -59,18 +59,18 @@ export function PayslipsList() {
     <div className="flex flex-col h-full overflow-hidden bg-stone-100 rounded-r-xl">
       <div className="sticky top-0 z-10 flex items-center gap-4 h-16 px-5 border-b bg-stone-100">
         <SubNavToggle />
-        <h1 className="text-xl font-bold tracking-tight">Payslips</h1>
+        <h1 className="text-base font-semibold tracking-tight">Payslips</h1>
       </div>
 
       <div className="flex-1 overflow-auto p-5">
         {permissions === null || loading ? (
           <p className="text-sm text-gray-400">Loading...</p>
         ) : payslips.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center text-gray-400 text-sm">No payslips found.</div>
+          <div className="bg-white rounded-xl border border-gray-100 p-12 text-center text-gray-400 text-sm">No payslips found.</div>
         ) : (
           <div className="flex flex-col gap-3">
             {payslips.map((slip) => (
-              <div key={slip.id} className="bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-4 flex items-center justify-between">
+              <div key={slip.id} className="bg-white rounded-xl border border-gray-100 px-5 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><TbFileInvoice size={20} /></div>
                   <div>

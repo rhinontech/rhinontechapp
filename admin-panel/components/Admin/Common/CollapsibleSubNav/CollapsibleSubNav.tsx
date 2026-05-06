@@ -9,6 +9,7 @@ export interface SubNavItem {
   label: string;
   icon: React.ReactNode;
   href: string;
+  exact?: boolean;
   isCollapsible?: boolean;
   children?: SubNavItem[];
 }
@@ -24,13 +25,13 @@ export function CollapsibleSubNav({ title, items }: CollapsibleSubNavProps) {
 
   return (
     <aside
-      className={`flex h-full flex-col bg-stone-100 rounded-l-xl transition-all duration-200 ease-in-out shadow-md overflow-hidden ${
+      className={`flex h-full flex-col bg-stone-100 rounded-l-xl transition-all duration-200 ease-in-out overflow-hidden ${
         isExpanded ? "w-[20%] min-w-[180px] border-r" : "w-0"
       }`}
     >
       {isExpanded && (
         <div className="flex flex-col w-full flex-1">
-          <div className="flex items-center w-full h-16 px-5 py-4 text-xl font-semibold tracking-tight border-b border-stone-200">
+          <div className="flex items-center w-full h-16 px-5 py-4 text-xl font-semibold tracking-tight border-b">
             {title}
           </div>
           <div className="flex flex-col px-3 py-3 space-y-0.5">
@@ -40,7 +41,7 @@ export function CollapsibleSubNav({ title, items }: CollapsibleSubNavProps) {
                 icon={item.icon}
                 label={item.label}
                 isCollapsible={item.isCollapsible}
-                isActive={pathname.startsWith(item.href)}
+                isActive={item.exact ? pathname === item.href : pathname.startsWith(item.href)}
                 href={item.href}
               >
                 {item.children?.map((child, childIndex) => (

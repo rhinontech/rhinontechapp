@@ -1,5 +1,5 @@
 import { sequelize } from "./database";
-import { Role, Permission, User, InboxConversation, InboxMessage, InboxEmail, syncDatabase } from "../models";
+import { Role, Permission, User, InboxConversation, InboxMessage, InboxEmail, Task, Attendance, syncDatabase } from "../models";
 import bcrypt from "bcryptjs";
 
 const ALL_PERMISSIONS = [
@@ -38,6 +38,7 @@ async function seed() {
   console.log("Superadmin role seeded");
 
   // Create initial superadmin user
+  // joiningDate = 6 May 2024 (2-year anniversary this month), dateOfBirth = 6 May 1994 (birthday today)
   const passwordHash = await bcrypt.hash("Admin@123", 10);
   const [user, created] = await User.findOrCreate({
     where: { companyEmail: "admin@rhinontech.in" },
@@ -48,7 +49,8 @@ async function seed() {
       passwordHash,
       roleId: superadminRole.id,
       department: "Engineering",
-      joiningDate: new Date(),
+      joiningDate: new Date("2024-05-06"),
+      dateOfBirth: new Date("1994-05-06"),
       status: "active",
     },
   });
@@ -61,6 +63,8 @@ async function seed() {
     console.log("Superadmin user already exists");
   }
   await user.update({
+    joiningDate: new Date("2024-05-06"),
+    dateOfBirth: new Date("1994-05-06"),
     employmentType: "Full-Time",
     compensationType: "Salaried",
     workSchedule: "Standard (Mon-Fri)",
@@ -74,6 +78,7 @@ async function seed() {
   });
 
   const supportPasswordHash = await bcrypt.hash("Support@123", 10);
+  // joiningDate = 15 May 2023 (anniversary mid-May), dateOfBirth = 15 May 1996
   const [supportUser] = await User.findOrCreate({
     where: { companyEmail: "support@rhinontech.in" },
     defaults: {
@@ -83,11 +88,14 @@ async function seed() {
       passwordHash: supportPasswordHash,
       roleId: superadminRole.id,
       department: "Support",
-      joiningDate: new Date(),
+      joiningDate: new Date("2023-05-15"),
+      dateOfBirth: new Date("1996-05-15"),
       status: "active",
     },
   });
   await supportUser.update({
+    joiningDate: new Date("2023-05-15"),
+    dateOfBirth: new Date("1996-05-15"),
     employmentType: "Full-Time",
     compensationType: "Salaried",
     workSchedule: "Standard (Mon-Fri)",
@@ -99,6 +107,87 @@ async function seed() {
     medicalAllowance: 2000,
     otherAllowances: 5000,
   });
+
+  // Additional demo employees
+  const demoEmployees = [
+    {
+      fullName: "Aarav Mehta",
+      personalEmail: "aarav@rhinontech.in",
+      companyEmail: "aarav@rhinontech.in",
+      passwordHash: await bcrypt.hash("Demo@123", 10),
+      roleId: superadminRole.id,
+      department: "Product",
+      joiningDate: new Date("2026-04-28"),
+      dateOfBirth: new Date("1995-03-12"),
+      status: "active" as const,
+      employmentType: "Full-Time", compensationType: "Salaried",
+      workSchedule: "Standard (Mon-Fri)", workLocation: "Bengaluru", paymentFrequency: "Monthly",
+      basicSalary: 75000, hra: 30000, ta: 5000, medicalAllowance: 2000, otherAllowances: 6000,
+    },
+    {
+      fullName: "Priya Nair",
+      personalEmail: "priya@rhinontech.in",
+      companyEmail: "priya@rhinontech.in",
+      passwordHash: await bcrypt.hash("Demo@123", 10),
+      roleId: superadminRole.id,
+      department: "Design",
+      joiningDate: new Date("2026-05-01"),
+      dateOfBirth: new Date("1998-07-22"),
+      status: "active" as const,
+      employmentType: "Full-Time", compensationType: "Salaried",
+      workSchedule: "Standard (Mon-Fri)", workLocation: "Mumbai", paymentFrequency: "Monthly",
+      basicSalary: 68000, hra: 27200, ta: 4500, medicalAllowance: 1800, otherAllowances: 5500,
+    },
+    {
+      fullName: "Kabir Shah",
+      personalEmail: "kabir@rhinontech.in",
+      companyEmail: "kabir@rhinontech.in",
+      passwordHash: await bcrypt.hash("Demo@123", 10),
+      roleId: superadminRole.id,
+      department: "Engineering",
+      joiningDate: new Date("2025-05-20"),
+      dateOfBirth: new Date("1993-05-20"),
+      status: "active" as const,
+      employmentType: "Full-Time", compensationType: "Salaried",
+      workSchedule: "Standard (Mon-Fri)", workLocation: "Bengaluru", paymentFrequency: "Monthly",
+      basicSalary: 85000, hra: 34000, ta: 5500, medicalAllowance: 2200, otherAllowances: 7000,
+    },
+    {
+      fullName: "Neha Kapoor",
+      personalEmail: "neha@rhinontech.in",
+      companyEmail: "neha@rhinontech.in",
+      passwordHash: await bcrypt.hash("Demo@123", 10),
+      roleId: superadminRole.id,
+      department: "Finance",
+      joiningDate: new Date("2024-08-10"),
+      dateOfBirth: new Date("1997-11-03"),
+      status: "active" as const,
+      employmentType: "Full-Time", compensationType: "Salaried",
+      workSchedule: "Standard (Mon-Fri)", workLocation: "Delhi", paymentFrequency: "Monthly",
+      basicSalary: 72000, hra: 28800, ta: 4800, medicalAllowance: 2000, otherAllowances: 5800,
+    },
+    {
+      fullName: "Rohan Desai",
+      personalEmail: "rohan@rhinontech.in",
+      companyEmail: "rohan@rhinontech.in",
+      passwordHash: await bcrypt.hash("Demo@123", 10),
+      roleId: superadminRole.id,
+      department: "Sales",
+      joiningDate: new Date("2026-05-05"),
+      dateOfBirth: new Date("1999-09-18"),
+      status: "active" as const,
+      employmentType: "Full-Time", compensationType: "Salaried",
+      workSchedule: "Standard (Mon-Fri)", workLocation: "Pune", paymentFrequency: "Monthly",
+      basicSalary: 60000, hra: 24000, ta: 4000, medicalAllowance: 1500, otherAllowances: 4500,
+    },
+  ];
+
+  for (const emp of demoEmployees) {
+    const { employmentType, compensationType, workSchedule, workLocation, paymentFrequency, basicSalary, hra, ta, medicalAllowance, otherAllowances, ...defaults } = emp;
+    const [demoUser] = await User.findOrCreate({ where: { companyEmail: emp.companyEmail }, defaults });
+    await demoUser.update({ employmentType, compensationType, workSchedule, workLocation, paymentFrequency, basicSalary, hra, ta, medicalAllowance, otherAllowances });
+  }
+  console.log("Demo employees seeded");
 
   const conversationSeeds = [
     {
@@ -306,6 +395,101 @@ async function seed() {
     });
   }
   console.log("Email inbox seed data ready");
+
+  // Seed tasks
+  const taskSeeds = [
+    {
+      title: "Cashbox reconciliation",
+      description: "Prepare cashbox reconciliation and confirm variance before closing.",
+      assigneeId: user.id,
+      createdById: user.id,
+      team: "Finance",
+      dueDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000),
+      status: "Pending" as const,
+    },
+    {
+      title: "Payroll salary audit",
+      description: "Validate salary setup for employees with missing HRA or basic salary.",
+      assigneeId: user.id,
+      createdById: user.id,
+      team: "Payroll",
+      dueDate: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000),
+      status: "Pending" as const,
+    },
+    {
+      title: "Attendance policy review",
+      description: "Check regularization and overtime rules before publishing the work module.",
+      assigneeId: supportUser.id,
+      createdById: user.id,
+      team: "People Ops",
+      dueDate: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
+      status: "In progress" as const,
+    },
+    {
+      title: "Onboarding checklist update",
+      description: "Update the onboarding checklist to reflect the new SSO requirements.",
+      assigneeId: supportUser.id,
+      createdById: supportUser.id,
+      team: "HR",
+      dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+      status: "Done" as const,
+    },
+    {
+      title: "Q2 expense report",
+      description: "Compile Q2 expense report across all departments for finance review.",
+      assigneeId: user.id,
+      createdById: user.id,
+      team: "Finance",
+      dueDate: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000),
+      status: "In progress" as const,
+    },
+  ];
+
+  for (const t of taskSeeds) {
+    await Task.findOrCreate({
+      where: { title: t.title, assigneeId: t.assigneeId },
+      defaults: t,
+    });
+  }
+  console.log("Tasks seeded");
+
+  // Seed attendance records for current month
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  for (const seedUserId of [user.id, supportUser.id]) {
+    for (let d = 1; d <= today.getDate(); d++) {
+      const date = new Date(today.getFullYear(), today.getMonth(), d);
+      const dayOfWeek = date.getDay();
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      const isToday = d === today.getDate();
+
+      if (isWeekend) continue;
+
+      // For today, only add if user clocked in (skip so it's naturally absent)
+      if (isToday) continue;
+
+      const clockInHour = 8 + Math.floor(Math.random() * 2);
+      const clockInMin = Math.floor(Math.random() * 30);
+      const clockIn = new Date(date);
+      clockIn.setHours(clockInHour, clockInMin, 0, 0);
+
+      const workHours = 8 + Math.floor(Math.random() * 2);
+      const clockOut = new Date(clockIn.getTime() + workHours * 60 * 60 * 1000);
+
+      await Attendance.findOrCreate({
+        where: { userId: seedUserId, date },
+        defaults: {
+          userId: seedUserId,
+          date,
+          clockIn,
+          clockOut,
+          status: "present",
+        },
+      });
+    }
+  }
+  console.log("Attendance seeded");
 
   await sequelize.close();
 }

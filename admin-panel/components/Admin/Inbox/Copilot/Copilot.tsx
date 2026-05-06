@@ -55,7 +55,7 @@ const Copilot = () => {
 
           {/* Copilot explained button */}
           <div className="flex justify-center">
-            <Button variant="outline" className="rounded-full bg-white shadow-sm px-6 py-2 flex items-center gap-2">
+            <Button variant="outline" className="rounded-full bg-white px-6 py-2 flex items-center gap-2">
               <span className="text-sm font-medium">Copilot explained</span>
             </Button>
           </div>

@@ -13,6 +13,7 @@ interface UserAttributes {
   department: string;
   status: UserStatus;
   joiningDate: Date;
+  dateOfBirth?: Date;
   // HR / employment info
   pan?: string;
   employmentType?: string;
@@ -21,6 +22,21 @@ interface UserAttributes {
   remotePosition?: boolean;
   workLocation?: string;
   paymentFrequency?: string;
+  legalName?: string;
+  roleTitle?: string;
+  annualCompensation?: number;
+  annualVariablePay?: number;
+  pastPayrollFinancialYear?: string;
+  pastTaxableSalary?: number;
+  pastTdsDeducted?: number;
+  bankAccountNumber?: string;
+  bankIfscCode?: string;
+  bankBeneficiaryName?: string;
+  pfUanNumber?: string;
+  esicIpNumber?: string;
+  labourWelfareFundEnabled?: boolean;
+  npsEnabled?: boolean;
+  professionalTaxEnabled?: boolean;
   // Salary structure (monthly amounts, set by admin — used to auto-generate payslips)
   basicSalary?: number;
   hra?: number;
@@ -37,6 +53,7 @@ interface UserCreationAttributes
     | "id"
     | "companyEmail"
     | "status"
+    | "dateOfBirth"
     | "pan"
     | "employmentType"
     | "compensationType"
@@ -44,6 +61,21 @@ interface UserCreationAttributes
     | "remotePosition"
     | "workLocation"
     | "paymentFrequency"
+    | "legalName"
+    | "roleTitle"
+    | "annualCompensation"
+    | "annualVariablePay"
+    | "pastPayrollFinancialYear"
+    | "pastTaxableSalary"
+    | "pastTdsDeducted"
+    | "bankAccountNumber"
+    | "bankIfscCode"
+    | "bankBeneficiaryName"
+    | "pfUanNumber"
+    | "esicIpNumber"
+    | "labourWelfareFundEnabled"
+    | "npsEnabled"
+    | "professionalTaxEnabled"
     | "basicSalary"
     | "hra"
     | "ta"
@@ -64,6 +96,7 @@ export class User
   declare department: string;
   declare status: UserStatus;
   declare joiningDate: Date;
+  declare dateOfBirth: Date;
   declare pan: string;
   declare employmentType: string;
   declare compensationType: string;
@@ -71,6 +104,21 @@ export class User
   declare remotePosition: boolean;
   declare workLocation: string;
   declare paymentFrequency: string;
+  declare legalName: string;
+  declare roleTitle: string;
+  declare annualCompensation: number;
+  declare annualVariablePay: number;
+  declare pastPayrollFinancialYear: string;
+  declare pastTaxableSalary: number;
+  declare pastTdsDeducted: number;
+  declare bankAccountNumber: string;
+  declare bankIfscCode: string;
+  declare bankBeneficiaryName: string;
+  declare pfUanNumber: string;
+  declare esicIpNumber: string;
+  declare labourWelfareFundEnabled: boolean;
+  declare npsEnabled: boolean;
+  declare professionalTaxEnabled: boolean;
   declare basicSalary: number;
   declare hra: number;
   declare ta: number;
@@ -91,6 +139,7 @@ User.init(
     department: { type: DataTypes.STRING, allowNull: false },
     status: { type: DataTypes.ENUM("active", "inactive"), defaultValue: "active" },
     joiningDate: { type: DataTypes.DATEONLY, allowNull: false },
+    dateOfBirth: { type: DataTypes.DATEONLY, allowNull: true },
     pan: { type: DataTypes.STRING(10), allowNull: true },
     employmentType: { type: DataTypes.STRING, allowNull: true, defaultValue: "Full-Time" },
     compensationType: { type: DataTypes.STRING, allowNull: true, defaultValue: "Salaried" },
@@ -98,6 +147,21 @@ User.init(
     remotePosition: { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: false },
     workLocation: { type: DataTypes.STRING, allowNull: true },
     paymentFrequency: { type: DataTypes.STRING, allowNull: true, defaultValue: "Monthly" },
+    legalName: { type: DataTypes.STRING, allowNull: true },
+    roleTitle: { type: DataTypes.STRING, allowNull: true },
+    annualCompensation: { type: DataTypes.DECIMAL(12, 2), allowNull: true, defaultValue: 0 },
+    annualVariablePay: { type: DataTypes.DECIMAL(12, 2), allowNull: true, defaultValue: 0 },
+    pastPayrollFinancialYear: { type: DataTypes.STRING, allowNull: true },
+    pastTaxableSalary: { type: DataTypes.DECIMAL(12, 2), allowNull: true, defaultValue: 0 },
+    pastTdsDeducted: { type: DataTypes.DECIMAL(12, 2), allowNull: true, defaultValue: 0 },
+    bankAccountNumber: { type: DataTypes.STRING, allowNull: true },
+    bankIfscCode: { type: DataTypes.STRING, allowNull: true },
+    bankBeneficiaryName: { type: DataTypes.STRING, allowNull: true },
+    pfUanNumber: { type: DataTypes.STRING, allowNull: true },
+    esicIpNumber: { type: DataTypes.STRING, allowNull: true },
+    labourWelfareFundEnabled: { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: false },
+    npsEnabled: { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: false },
+    professionalTaxEnabled: { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: true },
     basicSalary: { type: DataTypes.DECIMAL(12, 2), allowNull: true },
     hra: { type: DataTypes.DECIMAL(12, 2), allowNull: true, defaultValue: 0 },
     ta: { type: DataTypes.DECIMAL(12, 2), allowNull: true, defaultValue: 0 },
