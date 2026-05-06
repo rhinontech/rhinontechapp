@@ -1,8 +1,8 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Cookies from "js-cookie";
-import { TbLayoutSidebarFilled, TbLayoutSidebarRightFilled, TbPencil, TbPlus, TbSearch } from "react-icons/tb";
+import { TbCamera, TbLayoutSidebarFilled, TbLayoutSidebarRightFilled, TbPencil, TbPlus, TbSearch } from "react-icons/tb";
 import { cn } from "@/lib/utils";
 
 interface Role {
@@ -22,6 +22,7 @@ interface Employee {
   joiningDate: string;
   dateOfBirth?: string;
   pan?: string;
+  avatarUrl?: string;
   employmentType?: string;
   compensationType?: string;
   workSchedule?: string;
@@ -61,7 +62,7 @@ type EmployeeForm = {
   joiningDate: string;
   dateOfBirth: string;
   status: "active" | "inactive";
-  password: string;
+  emailPrefix: string;
   pan: string;
   employmentType: string;
   compensationType: string;
@@ -99,11 +100,11 @@ const emptyForm: EmployeeForm = {
   joiningDate: "",
   dateOfBirth: "",
   status: "active",
-  password: "",
+  emailPrefix: "",
   pan: "",
   employmentType: "Full-Time",
   compensationType: "Salaried",
-  workSchedule: "Standard (Mon-Fri)",
+  workSchedule: "11 AM – 8 PM (Mon–Sat)",
   remotePosition: false,
   workLocation: "",
   paymentFrequency: "Monthly",
@@ -154,11 +155,11 @@ function employeeToForm(employee: Employee): EmployeeForm {
     joiningDate: inputDate(employee.joiningDate),
     dateOfBirth: inputDate(employee.dateOfBirth ?? ""),
     status: employee.status,
-    password: "",
+    emailPrefix: "",
     pan: employee.pan ?? "",
     employmentType: employee.employmentType ?? "Full-Time",
     compensationType: employee.compensationType ?? "Salaried",
-    workSchedule: employee.workSchedule ?? "Standard (Mon-Fri)",
+    workSchedule: employee.workSchedule ?? "11 AM – 8 PM (Mon–Sat)",
     remotePosition: employee.remotePosition ?? false,
     workLocation: employee.workLocation ?? "",
     paymentFrequency: employee.paymentFrequency ?? "Monthly",
@@ -188,7 +189,7 @@ function employeeToForm(employee: Employee): EmployeeForm {
 function formPayload(form: EmployeeForm, mode: PanelMode) {
   return {
     ...form,
-    password: mode === "create" ? form.password : undefined,
+    emailPrefix: mode === "create" ? form.emailPrefix : undefined,
     annualCompensation: Number(form.annualCompensation || 0),
     annualVariablePay: Number(form.annualVariablePay || 0),
     pastTaxableSalary: Number(form.pastTaxableSalary || 0),
@@ -274,6 +275,8 @@ export function PeopleDirectory() {
   const [isPreviewExpanded, setIsPreviewExpanded] = useState(true);
   const [form, setForm] = useState<EmployeeForm>(emptyForm);
   const [message, setMessage] = useState("");
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const token = Cookies.get("authToken");
   const permissions: string[] = (() => {
@@ -402,6 +405,26 @@ export function PeopleDirectory() {
     setMode("view");
   };
 
+  const uploadAvatar = async (file: File) => {
+    if (!selectedEmployee) return;
+    setAvatarUploading(true);
+    try {
+      const data = new FormData();
+      data.append("avatar", file);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/employees/${selectedEmployee.id}/avatar`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        body: data,
+      });
+      if (!res.ok) return;
+      const { avatarUrl } = await res.json();
+      setEmployees((prev) => prev.map((e) => e.id === selectedEmployee.id ? { ...e, avatarUrl } : e));
+      setSelectedEmployee((prev) => prev ? { ...prev, avatarUrl } : prev);
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
   return (
     <div className="flex min-h-0 gap-2 w-full h-full overflow-hidden">
       <main className="flex min-h-0 flex-col bg-stone-50 rounded-xl w-full h-full overflow-hidden">
@@ -469,8 +492,8 @@ export function PeopleDirectory() {
                     >
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-semibold shrink-0">
-                            {initials(emp.fullName)}
+                          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-semibold shrink-0 overflow-hidden">
+                            {emp.avatarUrl ? <img src={emp.avatarUrl} alt={emp.fullName} className="w-full h-full object-cover" /> : initials(emp.fullName)}
                           </div>
                           <div>
                             <p className="font-medium text-gray-900 text-sm">{emp.fullName}</p>
@@ -529,8 +552,30 @@ export function PeopleDirectory() {
                   <div className="space-y-5">
                     {/* Avatar + name — always visible */}
                     <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center text-white text-lg font-semibold">
-                        {initials(selectedEmployee.fullName)}
+                      <div className="relative group shrink-0">
+                        <div className="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center text-white text-lg font-semibold overflow-hidden">
+                          {selectedEmployee.avatarUrl
+                            ? <img src={selectedEmployee.avatarUrl} alt={selectedEmployee.fullName} className="w-full h-full object-cover" />
+                            : initials(selectedEmployee.fullName)}
+                        </div>
+                        {canManage && (
+                          <>
+                            <button
+                              onClick={() => avatarInputRef.current?.click()}
+                              disabled={avatarUploading}
+                              className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                            >
+                              <TbCamera size={16} className="text-white" />
+                            </button>
+                            <input
+                              ref={avatarInputRef}
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp"
+                              className="hidden"
+                              onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAvatar(f); e.target.value = ""; }}
+                            />
+                          </>
+                        )}
                       </div>
                       <div>
                         <h2 className="text-lg font-semibold text-gray-900">{selectedEmployee.fullName}</h2>
@@ -659,8 +704,19 @@ export function PeopleDirectory() {
                   <Checkbox label="Professional Tax" checked={form.professionalTaxEnabled} onChange={(value) => updateForm("professionalTaxEnabled", value)} />
                   {mode === "create" && (
                     <label className="col-span-2 flex flex-col gap-1 text-sm font-medium text-gray-700">
-                      Temporary password
-                      <input type="password" value={form.password} onChange={(e) => updateForm("password", e.target.value)} className="rounded-lg border border-gray-200 px-3 py-2 font-normal focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                      Company Email
+                      <div className="flex items-center rounded-lg border border-gray-200 overflow-hidden focus-within:ring-2 focus-within:ring-blue-500">
+                        <input
+                          type="text"
+                          value={form.emailPrefix}
+                          onChange={(e) => updateForm("emailPrefix", e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ""))}
+                          placeholder="firstname.lastname"
+                          className="flex-1 px-3 py-2 text-sm font-normal focus:outline-none"
+                          required
+                        />
+                        <span className="px-3 py-2 bg-gray-50 text-gray-500 text-sm border-l border-gray-200 select-none whitespace-nowrap">@rhinontech.in</span>
+                      </div>
+                      <p className="text-xs text-gray-400 font-normal">A welcome email with login credentials will be sent to their personal email.</p>
                     </label>
                   )}
                 </div>

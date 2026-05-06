@@ -102,7 +102,7 @@ export function EmployeeSalaryDetails() {
                 <Field label="Compensation Type" value={profile?.compensationType ?? "Salaried"} />
                 <Field label="Joining Date" value={joinDate} />
                 <Field label="Work Location" value={profile?.workLocation ?? profile?.department} />
-                <Field label="Work Schedule" value={profile?.workSchedule ?? "Standard (Mon–Fri)"} />
+                <Field label="Work Schedule" value={profile?.workSchedule ?? "11 AM – 8 PM (Mon–Sat)"} />
                 <Field label="Payment Frequency" value={profile?.paymentFrequency ?? "Monthly"} />
                 {profile?.pan && <Field label="PAN" value={profile.pan} />}
               </div>

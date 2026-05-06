@@ -15,7 +15,7 @@ interface AttendanceDay {
   date: string;
   clockIn: string | null;
   clockOut: string | null;
-  status: "present" | "absent" | "weekend" | "holiday" | "leave";
+  status: "present" | "absent" | "weekend" | "holiday" | "leave" | "upcoming";
   note: string | null;
   durationMinutes: number;
 }
@@ -29,12 +29,12 @@ interface TodayStats {
 }
 
 function AttendanceStatus({ value }: { value: string }) {
-  const isPresent = value === "P";
+  const color =
+    value === "P" ? "border-green-600 bg-green-100 text-green-700" :
+    value === "–" ? "border-gray-300 bg-gray-50 text-gray-400" :
+    "border-red-500 bg-red-50 text-red-600";
   return (
-    <span className={cn(
-      "inline-flex h-7 w-7 items-center justify-center rounded-full border text-sm font-semibold",
-      isPresent ? "border-green-600 bg-green-100 text-green-700" : "border-red-500 bg-red-50 text-red-600"
-    )}>
+    <span className={cn("inline-flex h-7 w-7 items-center justify-center rounded-full border text-sm font-semibold", color)}>
       {value}
     </span>
   );
@@ -91,8 +91,12 @@ export function AttendancePage() {
         apiFetch<AttendanceDay[]>(`/attendance?month=${month}&year=${year}`),
         apiFetch<TodayStats>("/attendance/today"),
       ]);
-      const reversed = [...monthDays].reverse();
-      setDays(reversed);
+      // Order: today first → past days newest→oldest → upcoming days oldest→newest
+      const todayStr = new Date().toISOString().split("T")[0];
+      const todayEntry = monthDays.filter((d) => d.date === todayStr);
+      const past = monthDays.filter((d) => d.date < todayStr).reverse();
+      const upcoming = monthDays.filter((d) => d.date > todayStr);
+      setDays([...todayEntry, ...past, ...upcoming]);
       setToday(todayRecord);
     } catch {
       // silently fail
@@ -167,7 +171,7 @@ export function AttendancePage() {
                       <p className="mt-8 text-lg text-gray-500">You clocked in at {formatTime(today.clockIn)}</p>
                       <div className="mt-4 flex items-center gap-3">
                         <span className="rounded-md bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-600">DEFAULT SHIFT</span>
-                        <span className="text-gray-600">9:00 AM – 6:00 PM</span>
+                        <span className="text-gray-600">11:00 AM – 8:00 PM</span>
                       </div>
                       <p className="mt-3 text-gray-600">Duration: {formatDuration(today.durationMinutes)}</p>
                     </>
@@ -228,14 +232,15 @@ export function AttendancePage() {
                   {days.map((day) => {
                     const isToday = day.date === todayKey;
                     const label = ordinalLabel(day.date, isToday);
-                    const statusChar = day.status === "present" ? "P" : "A";
-                    const note = day.status === "weekend" ? "Weekend" : day.status === "holiday" ? "Holiday" : day.note ?? undefined;
+                    const statusChar = day.status === "present" ? "P" : day.status === "upcoming" ? "–" : "A";
+                    const isUpcoming = day.status === "upcoming";
+                    const note = day.status === "weekend" ? "Weekend" : day.status === "holiday" ? "Holiday" : day.status === "upcoming" ? "Upcoming" : day.note ?? undefined;
                     const clockInFrac = toHourFraction(day.clockIn);
                     const clockOutFrac = toHourFraction(day.clockOut) ?? (day.clockIn ? (new Date().getHours() + new Date().getMinutes() / 60) : null);
 
                     return (
                       <div key={day.date} className="contents">
-                        <div className="border-t bg-gray-50 p-3 text-sm font-medium text-gray-800">{label}</div>
+                        <div className={cn("border-t p-3 text-sm font-medium", isUpcoming ? "bg-white text-gray-400" : "bg-gray-50 text-gray-800")}>{label}</div>
                         <div className="relative border-l border-t bg-white" style={{ gridColumn: "span 24" }}>
                           <div className="absolute inset-0 grid" style={{ gridTemplateColumns: "repeat(24, minmax(0, 1fr))" }}>
                             {hourColumns.map((h) => <div key={h} className="border-l border-gray-100" />)}

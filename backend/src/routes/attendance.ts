@@ -11,8 +11,7 @@ function toDateKey(date: Date) {
 }
 
 function isWeekend(date: Date) {
-  const day = date.getDay();
-  return day === 0 || day === 6;
+  return date.getDay() === 0; // Sunday only — Mon–Sat is the work week
 }
 
 function durationMinutes(clockIn: Date | null | undefined, clockOut: Date | null | undefined) {
@@ -57,14 +56,15 @@ router.get("/", async (req: AuthRequest, res: Response) => {
         });
       } else {
         const weekend = isWeekend(date);
+        const isFuture = date > now;
         days.push({
           id: null,
           userId: req.user!.userId,
           date: key,
           clockIn: null,
           clockOut: null,
-          status: weekend ? "weekend" : "absent",
-          note: weekend ? "Weekend" : null,
+          status: weekend ? "weekend" : isFuture ? "upcoming" : "absent",
+          note: weekend ? "Weekend" : isFuture ? "Upcoming" : null,
           durationMinutes: 0,
         });
       }

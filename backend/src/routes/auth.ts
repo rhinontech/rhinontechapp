@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { Op } from "sequelize";
 import { User, Role, Permission } from "../models";
 import { env } from "../config/env";
 import { authenticate, AuthRequest } from "../middleware/authenticate";
@@ -107,6 +108,61 @@ router.put("/me/password", authenticate, async (req: AuthRequest, res: Response)
   const passwordHash = await bcrypt.hash(newPassword, 10);
   await user.update({ passwordHash });
   res.json({ message: "Password changed successfully" });
+});
+
+// Validate onboarding token — returns name + company email (public, no auth)
+router.get("/onboard/:token", async (req: Request, res: Response) => {
+  const user = await User.findOne({
+    where: {
+      onboardingToken: req.params.token,
+      onboardingTokenExpiry: { [Op.gt]: new Date() },
+    },
+    attributes: ["fullName", "companyEmail"],
+  });
+  if (!user) {
+    res.status(404).json({ message: "This onboarding link has expired or is invalid." });
+    return;
+  }
+  res.json({ fullName: user.fullName, companyEmail: user.companyEmail });
+});
+
+// Complete onboarding — set password, clear token
+router.post("/onboard", async (req: Request, res: Response) => {
+  const { token, newPassword } = req.body;
+  if (!token || !newPassword) {
+    res.status(400).json({ message: "token and newPassword are required" });
+    return;
+  }
+  if (newPassword.length < 8) {
+    res.status(400).json({ message: "Password must be at least 8 characters" });
+    return;
+  }
+  if (!/[A-Z]/.test(newPassword)) {
+    res.status(400).json({ message: "Password must contain at least one uppercase letter" });
+    return;
+  }
+  if (!/[0-9]/.test(newPassword)) {
+    res.status(400).json({ message: "Password must contain at least one number" });
+    return;
+  }
+  const user = await User.findOne({
+    where: {
+      onboardingToken: token,
+      onboardingTokenExpiry: { [Op.gt]: new Date() },
+    },
+  });
+  if (!user) {
+    res.status(404).json({ message: "This onboarding link has expired or is invalid." });
+    return;
+  }
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+  await user.update({
+    passwordHash,
+    onboarded: true,
+    onboardingToken: null,
+    onboardingTokenExpiry: null,
+  });
+  res.json({ companyEmail: user.companyEmail });
 });
 
 export default router;

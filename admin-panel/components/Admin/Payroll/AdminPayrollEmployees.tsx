@@ -464,7 +464,7 @@ export function AdminPayrollEmployees() {
                         <input
                           type="number"
                           min={0}
-                          value={form[key]}
+                          value={form[key] as string}
                           onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
                           className="w-full pl-6 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                           placeholder="0"

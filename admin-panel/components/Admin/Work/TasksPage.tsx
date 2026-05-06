@@ -192,7 +192,7 @@ export function TasksPage({ scope }: { scope: TaskScope }) {
               Add a task
               <TbPlus size={14} />
             </button>
-            {(!isPreviewExpanded || visibleTasks.length === 0) && (
+            {(!isPreviewExpanded || (visibleTasks.length === 0 && mode !== "create")) && (
               <button onClick={() => setIsPreviewExpanded(true)} className="p-2 text-gray-600 hover:bg-stone-100 rounded-lg">
                 <TbLayoutSidebarFilled size={20} />
               </button>
@@ -260,8 +260,8 @@ export function TasksPage({ scope }: { scope: TaskScope }) {
         </div>
       </main>
 
-      <aside className={`flex min-h-0 h-full flex-col bg-white rounded-xl overflow-hidden transition-all duration-200 ease-in-out ${isPreviewExpanded && visibleTasks.length > 0 ? "w-[38%]" : "w-0"}`}>
-        {isPreviewExpanded && visibleTasks.length > 0 && (
+      <aside className={`flex min-h-0 h-full flex-col bg-white rounded-xl overflow-hidden transition-all duration-200 ease-in-out ${isPreviewExpanded && (visibleTasks.length > 0 || mode === "create") ? "w-[38%]" : "w-0"}`}>
+        {isPreviewExpanded && (visibleTasks.length > 0 || mode === "create") && (
           <div className="flex h-full flex-1 flex-col overflow-hidden">
             <div className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-white px-5">
               <p className="flex self-stretch items-center border-b-2 border-blue-600 text-sm font-semibold text-gray-900 -mb-px">

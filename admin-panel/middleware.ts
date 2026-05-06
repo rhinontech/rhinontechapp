@@ -16,6 +16,11 @@ export function middleware(request: NextRequest) {
   const authToken = request.cookies.get("authToken")?.value;
 
   const isAuthRoute = pathname.startsWith("/auth/");
+  const isOnboardRoute = pathname.startsWith("/onboard");
+
+  if (isOnboardRoute) {
+    return NextResponse.next();
+  }
 
   if (isAuthRoute) {
     if (authToken) {

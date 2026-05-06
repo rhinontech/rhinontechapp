@@ -189,7 +189,7 @@ export function ProfileInfo() {
                   <Field label="PAN"               value={profile.pan} />
                   <Field label="Employment Type"   value={profile.employmentType ?? "Full-Time"} />
                   <Field label="Compensation Type" value={profile.compensationType ?? "Salaried"} />
-                  <Field label="Work Schedule"     value={profile.workSchedule ?? "Standard (Mon–Fri)"} />
+                  <Field label="Work Schedule"     value={profile.workSchedule ?? "11 AM – 8 PM (Mon–Sat)"} />
                   <Field label="Work Location"     value={profile.workLocation} />
                   <Field label="Remote Position"   value={profile.remotePosition ? "Yes" : "No"} />
                   <Field label="Payment Frequency" value={profile.paymentFrequency ?? "Monthly"} />
@@ -207,7 +207,7 @@ export function ProfileInfo() {
                     const opts: Record<string, string[]> = {
                       employmentType:   ["Full-Time", "Part-Time", "Contract", "Intern"],
                       compensationType: ["Salaried", "Hourly", "Contract"],
-                      workSchedule:     ["Standard (Mon–Fri)", "Flexible", "Shift", "Remote"],
+                      workSchedule:     ["11 AM – 8 PM (Mon–Sat)", "Flexible", "Shift", "Remote"],
                       paymentFrequency: ["Monthly", "Bi-Weekly", "Weekly"],
                     };
                     const labels: Record<string, string> = {

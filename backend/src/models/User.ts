@@ -47,6 +47,12 @@ interface UserAttributes {
   pfEnabled?: boolean;   // default true (12% of basic)
   ptAmount?: number;     // default 200 — set 0 to disable
   tdsAmount?: number;    // default 0 — manual monthly TDS override
+  // Assets
+  avatarKey?: string | null;
+  // Onboarding
+  onboardingToken?: string | null;
+  onboardingTokenExpiry?: Date | null;
+  onboarded?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -88,6 +94,10 @@ interface UserCreationAttributes
     | "pfEnabled"
     | "ptAmount"
     | "tdsAmount"
+    | "avatarKey"
+    | "onboardingToken"
+    | "onboardingTokenExpiry"
+    | "onboarded"
   > {}
 
 export class User
@@ -134,6 +144,10 @@ export class User
   declare pfEnabled: boolean;
   declare ptAmount: number;
   declare tdsAmount: number;
+  declare avatarKey: string | null;
+  declare onboardingToken: string | null;
+  declare onboardingTokenExpiry: Date | null;
+  declare onboarded: boolean;
   declare createdAt: Date;
   declare updatedAt: Date;
 }
@@ -153,7 +167,7 @@ User.init(
     pan: { type: DataTypes.STRING(10), allowNull: true },
     employmentType: { type: DataTypes.STRING, allowNull: true, defaultValue: "Full-Time" },
     compensationType: { type: DataTypes.STRING, allowNull: true, defaultValue: "Salaried" },
-    workSchedule: { type: DataTypes.STRING, allowNull: true, defaultValue: "Standard (Mon–Fri)" },
+    workSchedule: { type: DataTypes.STRING, allowNull: true, defaultValue: "11 AM – 8 PM (Mon–Sat)" },
     remotePosition: { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: false },
     workLocation: { type: DataTypes.STRING, allowNull: true },
     paymentFrequency: { type: DataTypes.STRING, allowNull: true, defaultValue: "Monthly" },
@@ -180,6 +194,10 @@ User.init(
     pfEnabled:  { type: DataTypes.BOOLEAN,       allowNull: true, defaultValue: true },
     ptAmount:   { type: DataTypes.DECIMAL(10, 2), allowNull: true, defaultValue: 200 },
     tdsAmount:  { type: DataTypes.DECIMAL(10, 2), allowNull: true, defaultValue: 0   },
+    avatarKey:             { type: DataTypes.STRING,  allowNull: true, defaultValue: null },
+    onboardingToken:       { type: DataTypes.STRING,  allowNull: true, defaultValue: null },
+    onboardingTokenExpiry: { type: DataTypes.DATE,    allowNull: true, defaultValue: null },
+    onboarded:             { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: false },
   },
   { sequelize, tableName: "users", timestamps: true }
 );
