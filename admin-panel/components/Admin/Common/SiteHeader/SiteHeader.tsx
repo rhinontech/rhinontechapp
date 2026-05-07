@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Cookies from "js-cookie";
+import { useEffect, useState } from "react";
 import { LogOut } from "lucide-react";
 import { TbUser, TbChevronDown, TbBell } from "react-icons/tb";
 import {
@@ -30,12 +31,15 @@ export function SiteHeader() {
   const pathname = usePathname();
   const router   = useRouter();
   const roleSlug = pathname.split("/")[1] || "";
+  const [currentUser, setCurrentUser] = useState<{ fullName?: string; companyEmail?: string; roleSlug?: string }>({
+    fullName: "User",
+    companyEmail: "",
+  });
 
-  const currentUser = (() => {
+  useEffect(() => {
     const token = Cookies.get("authToken");
-    if (!token) return { fullName: "User", companyEmail: "" };
-    return decodeJWT(token);
-  })();
+    if (token) setCurrentUser(decodeJWT(token));
+  }, []);
 
   const name      = currentUser.fullName    ?? "User";
   const firstName = name.split(" ")[0];

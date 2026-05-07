@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { AdminDashboardShell } from "@/components/Admin/Common/AdminDashboardShell/AdminDashboardShell";
 import {
   TbBuildingSkyscraper,
@@ -9,6 +10,7 @@ import {
   TbCalendarEvent,
   TbCalendarPlus,
   TbCake,
+  TbCash,
   TbCheck,
   TbClock,
   TbConfetti,
@@ -72,6 +74,11 @@ interface DashboardStats {
   pendingTasksList: PendingTask[];
 }
 
+interface InvestmentSummary {
+  totalCompanyCostPaid: number;
+  activeSalaryEmployeeCount: number;
+}
+
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 function formatTime(iso: string | null | undefined): string {
@@ -84,6 +91,10 @@ function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+function formatINR(value: number): string {
+  return `₹${Number(value || 0).toLocaleString("en-IN")}`;
 }
 
 function ordinalDate(iso: string): string {
@@ -166,15 +177,29 @@ function DayBadge({ day, highlight }: { day: number; highlight?: boolean }) {
 // ─── main ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
+  const pathname = usePathname();
+  const roleSlug = pathname.split("/")[1] || "";
+  const isSuperadmin = roleSlug === "superadmin";
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [investment, setInvestment] = useState<InvestmentSummary | null>(null);
   const [clockingIn, setClockingIn] = useState(false);
   const [clockingOut, setClockingOut] = useState(false);
+  const [todayLabel, setTodayLabel] = useState("");
 
   const fetchStats = useCallback(() => {
     apiFetch<DashboardStats>("/dashboard/stats").then(setStats).catch(() => {});
   }, []);
 
-  useEffect(() => { fetchStats(); }, [fetchStats]);
+  const fetchInvestment = useCallback(() => {
+    if (!isSuperadmin) return;
+    apiFetch<InvestmentSummary>("/payroll/admin/investment").then(setInvestment).catch(() => {});
+  }, [isSuperadmin]);
+
+  useEffect(() => {
+    fetchStats();
+    fetchInvestment();
+    setTodayLabel(new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" }));
+  }, [fetchStats, fetchInvestment]);
 
   const handleClockIn = async () => {
     setClockingIn(true);
@@ -190,7 +215,6 @@ export default function DashboardPage() {
     finally { setClockingOut(false); }
   };
 
-  const todayLabel = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const att = stats?.todayAttendance;
   const clocked = !!att?.clockIn;
   const clockedOut = !!att?.clockOut;
@@ -219,18 +243,30 @@ export default function DashboardPage() {
               value={stats?.totalEmployees ?? "—"}
               sub={stats ? `${stats.newThisMonth} joined this month` : undefined}
             />
-            <StatCard
-              icon={<TbCalendarCheck size={20} />}
-              label="Days present"
-              value={stats ? `${stats.daysPresent} days` : "—"}
-              sub={stats ? `${formatDuration(stats.totalMinutesThisMonth)} this month` : undefined}
-            />
-            <StatCard
-              icon={<TbCheck size={20} />}
-              label="My pending tasks"
-              value={stats?.pendingTasks ?? "—"}
-              sub={stats?.pendingTasks ? "Need attention" : "All caught up!"}
-            />
+            {isSuperadmin && (
+              <StatCard
+                icon={<TbCash size={20} />}
+                label="Total invested"
+                value={investment ? formatINR(investment.totalCompanyCostPaid) : "—"}
+                sub={investment ? `${investment.activeSalaryEmployeeCount} salaried employees` : "Payroll paid"}
+              />
+            )}
+            {!isSuperadmin && (
+              <StatCard
+                icon={<TbCalendarCheck size={20} />}
+                label="Days present"
+                value={stats ? `${stats.daysPresent} days` : "—"}
+                sub={stats ? `${formatDuration(stats.totalMinutesThisMonth)} this month` : undefined}
+              />
+            )}
+            {!isSuperadmin && (
+              <StatCard
+                icon={<TbCheck size={20} />}
+                label="My pending tasks"
+                value={stats?.pendingTasks ?? "—"}
+                sub={stats?.pendingTasks ? "Need attention" : "All caught up!"}
+              />
+            )}
             <StatCard
               icon={<TbBuildingSkyscraper size={20} />}
               label="New hires this month"

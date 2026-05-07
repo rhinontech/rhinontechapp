@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 import { MdDashboard, MdOutlineCloud } from "react-icons/md";
 import { FaUserGroup } from "react-icons/fa6";
 import { RiSettings3Fill } from "react-icons/ri";
@@ -17,12 +18,17 @@ import adminImages from "@/constants/admin/images";
 export function Sidebar() {
   const pathname = usePathname();
   const { sidebarExpanded, setSidebarExpanded, isHovering, setIsHovering } = useDashboard();
+  const [permissions, setPermissions] = useState<string[]>([]);
 
   const roleSlug = pathname.split("/")[1] || "";
-  const permissions: string[] = (() => {
-    try { return JSON.parse(Cookies.get("permissions") || "[]"); }
-    catch { return []; }
-  })();
+
+  useEffect(() => {
+    try {
+      setPermissions(JSON.parse(Cookies.get("permissions") || "[]"));
+    } catch {
+      setPermissions([]);
+    }
+  }, []);
 
   const expanded = sidebarExpanded || isHovering;
 
@@ -51,7 +57,7 @@ export function Sidebar() {
         {expanded ? (
           <div className="flex items-center justify-between w-full px-3">
             <Link href="/">
-              <Image src={adminImages.Logo_Rhinon_Tech_Dark} alt="Rhinon Tech" className="h-10 w-full object-cover" />
+              <Image src={adminImages.Logo_Rhinon_Tech_Dark} alt="Rhinon Tech" priority className="h-10 w-full object-cover" />
             </Link>
             <button
               onClick={() => setSidebarExpanded(!sidebarExpanded)}
@@ -62,7 +68,7 @@ export function Sidebar() {
           </div>
         ) : (
           <Link href="/">
-            <Image src={adminImages.blueLogo} alt="Rhinon Tech" className="h-8 w-8 object-cover" />
+            <Image src={adminImages.blueLogo} alt="Rhinon Tech" priority className="h-8 w-8 object-cover" />
           </Link>
         )}
       </div>

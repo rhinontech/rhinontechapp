@@ -110,6 +110,45 @@ router.get("/admin/runs", authorize("payroll:write"), async (_req: AuthRequest, 
   res.json(runs);
 });
 
+// Company payroll investment summary for admins/superadmins
+router.get("/admin/investment", authorize("payroll:write"), async (_req: AuthRequest, res: Response) => {
+  const paidPayslips = await Payslip.findAll({
+    where: { status: "paid" },
+    include: [{ model: Payroll, as: "payroll", where: { status: "paid" }, attributes: ["month", "year"] }],
+  });
+
+  const activeEmployees = await User.findAll({
+    where: { status: "active" },
+    attributes: ["id", "basicSalary", "hra", "ta", "medicalAllowance", "otherAllowances"],
+  });
+
+  const totalGrossPaid = paidPayslips.reduce((sum, slip) => sum + Number(slip.grossPay || 0), 0);
+  const totalNetPaid = paidPayslips.reduce((sum, slip) => sum + Number(slip.netPay || 0), 0);
+  const totalEmployerPfPaid = paidPayslips.reduce((sum, slip) => sum + Number(slip.pfEmployer || 0), 0);
+  const totalCompanyCostPaid = totalGrossPaid + totalEmployerPfPaid;
+
+  const activeSalaryEmployees = activeEmployees.filter((employee) => Number(employee.basicSalary || 0) > 0);
+  const monthlyCommittedGross = activeSalaryEmployees.reduce((sum, employee) => {
+    return sum
+      + Number(employee.basicSalary || 0)
+      + Number(employee.hra || 0)
+      + Number(employee.ta || 0)
+      + Number(employee.medicalAllowance || 0)
+      + Number(employee.otherAllowances || 0);
+  }, 0);
+
+  res.json({
+    totalGrossPaid,
+    totalNetPaid,
+    totalEmployerPfPaid,
+    totalCompanyCostPaid,
+    monthlyCommittedGross,
+    paidPayslipCount: paidPayslips.length,
+    activeEmployeeCount: activeEmployees.length,
+    activeSalaryEmployeeCount: activeSalaryEmployees.length,
+  });
+});
+
 // List all payslips for admins, optionally filtered by payroll run
 router.get("/admin/payslips", authorize("payroll:write"), async (req: AuthRequest, res: Response) => {
   const where = typeof req.query.run === "string" ? { payrollId: req.query.run } : {};

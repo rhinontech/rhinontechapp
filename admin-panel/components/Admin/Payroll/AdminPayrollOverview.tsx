@@ -10,6 +10,7 @@ import {
   TbCash,
   TbCalendarStats,
   TbChevronRight,
+  TbChartPie,
   TbLoader2,
   TbCheck,
 } from "react-icons/tb";
@@ -26,6 +27,17 @@ interface PayrollRun {
   processedBy?: { fullName: string };
 }
 
+interface InvestmentSummary {
+  totalGrossPaid: number;
+  totalNetPaid: number;
+  totalEmployerPfPaid: number;
+  totalCompanyCostPaid: number;
+  monthlyCommittedGross: number;
+  paidPayslipCount: number;
+  activeEmployeeCount: number;
+  activeSalaryEmployeeCount: number;
+}
+
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
 const STATUS_STYLE: Record<string, string> = {
@@ -33,6 +45,8 @@ const STATUS_STYLE: Record<string, string> = {
   processed: "bg-blue-100 text-blue-700",
   paid:      "bg-green-100 text-green-700",
 };
+
+const INR = (value: number) => `₹${Number(value || 0).toLocaleString("en-IN")}`;
 
 function StatCard({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string; sub?: string }) {
   return (
@@ -51,6 +65,7 @@ export function AdminPayrollOverview() {
   const pathname = usePathname();
   const roleSlug = pathname.split("/")[1];
   const [runs, setRuns] = useState<PayrollRun[]>([]);
+  const [investment, setInvestment] = useState<InvestmentSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [markingPaid, setMarkingPaid] = useState<string | null>(null);
 
@@ -65,7 +80,20 @@ export function AdminPayrollOverview() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchRuns(); }, []);
+  const fetchInvestment = () => {
+    const token = Cookies.get("authToken");
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/payroll/admin/investment`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((data) => setInvestment(data && !data.message ? data : null))
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    fetchRuns();
+    fetchInvestment();
+  }, []);
 
   const markPaid = async (id: string) => {
     setMarkingPaid(id);
@@ -76,6 +104,7 @@ export function AdminPayrollOverview() {
     });
     setMarkingPaid(null);
     fetchRuns();
+    fetchInvestment();
   };
 
   const latest = runs[0];
@@ -102,9 +131,41 @@ export function AdminPayrollOverview() {
         {/* Stats */}
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
           <StatCard icon={<TbCalendarStats size={20} />} label="Last Run" value={latest ? `${MONTHS[latest.month - 1]} ${latest.year}` : "—"} sub={latest ? latest.status.toUpperCase() : undefined} />
-          <StatCard icon={<TbCash size={20} />} label="Net Payout (Latest)" value={totalLastMonth ? `₹${totalLastMonth.toLocaleString("en-IN")}` : "—"} />
+          <StatCard icon={<TbCash size={20} />} label="Net Payout (Latest)" value={totalLastMonth ? INR(totalLastMonth) : "—"} />
           <StatCard icon={<TbUsers size={20} />} label="Pending Runs" value={String(pendingCount)} sub={pendingCount > 0 ? "Need attention" : "All paid"} />
           <StatCard icon={<TbCheck size={20} />} label="Last Paid Run" value={lastPaid ? `${MONTHS[lastPaid.month - 1]} ${lastPaid.year}` : "—"} />
+        </div>
+
+        <div className="mb-8 rounded-xl border border-gray-100 bg-white overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b">
+            <div className="flex items-center gap-2">
+              <TbChartPie size={18} className="text-gray-500" />
+              <p className="font-semibold text-gray-900">Company Investment</p>
+            </div>
+            <p className="text-xs text-gray-400">{investment ? `${investment.activeSalaryEmployeeCount} salaried employees` : "Loading..."}</p>
+          </div>
+          <div className="grid grid-cols-2 xl:grid-cols-4 divide-x divide-gray-100">
+            <div className="p-5">
+              <p className="text-sm text-gray-500">Total invested</p>
+              <p className="mt-1 text-xl font-bold text-gray-900">{investment ? INR(investment.totalCompanyCostPaid) : "—"}</p>
+              <p className="mt-1 text-xs text-gray-400">Gross salary + employer PF paid</p>
+            </div>
+            <div className="p-5">
+              <p className="text-sm text-gray-500">Salary credited</p>
+              <p className="mt-1 text-xl font-bold text-gray-900">{investment ? INR(investment.totalNetPaid) : "—"}</p>
+              <p className="mt-1 text-xs text-gray-400">{investment ? `${investment.paidPayslipCount} paid payslips` : "Paid payroll only"}</p>
+            </div>
+            <div className="p-5">
+              <p className="text-sm text-gray-500">Employer PF</p>
+              <p className="mt-1 text-xl font-bold text-gray-900">{investment ? INR(investment.totalEmployerPfPaid) : "—"}</p>
+              <p className="mt-1 text-xs text-gray-400">Company contribution paid</p>
+            </div>
+            <div className="p-5">
+              <p className="text-sm text-gray-500">Monthly commitment</p>
+              <p className="mt-1 text-xl font-bold text-gray-900">{investment ? INR(investment.monthlyCommittedGross) : "—"}</p>
+              <p className="mt-1 text-xs text-gray-400">{investment ? `${investment.activeEmployeeCount} active employees` : "Current salary setup"}</p>
+            </div>
+          </div>
         </div>
 
         {/* Payroll runs table */}
