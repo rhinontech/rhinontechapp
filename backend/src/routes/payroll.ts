@@ -1,6 +1,9 @@
 import { Router, Response } from "express";
 import { Payroll, Payslip, User, Role } from "../models";
 import { authenticate, authorize, AuthRequest } from "../middleware/authenticate";
+import { sendEmail } from "../services/mailer";
+import { payslipPaidEmail } from "../services/emailTemplates";
+import { env } from "../config/env";
 
 const router = Router();
 router.use(authenticate);
@@ -306,6 +309,40 @@ router.post("/admin/runs/:id/pay", authorize("payroll:write"), async (req: AuthR
   const paymentDate = new Date();
   await Payslip.update({ status: "paid", paymentDate }, { where: { payrollId: payroll.id } });
   await payroll.update({ status: "paid", processedById: req.user!.userId, processedAt: paymentDate });
+
+  // Send salary credited emails to all employees in this payroll run
+  const payslips = await Payslip.findAll({
+    where: { payrollId: payroll.id },
+    include: [{
+      model: User,
+      as: "employee",
+      attributes: ["fullName", "personalEmail", "companyEmail", "bankAccountNumber"],
+      include: [{ model: Role, as: "role", attributes: ["slug"] }],
+    }],
+  });
+
+  for (const slip of payslips) {
+    const emp = (slip as any).employee;
+    if (!emp) continue;
+    const emailTo = emp.personalEmail || emp.companyEmail;
+    if (!emailTo) continue;
+    const roleSlug = emp.role?.slug || "employee";
+    const payslipUrl = `${env.frontendUrl}/${roleSlug}/payroll/payslips/${slip.id}`;
+    const mail = payslipPaidEmail({
+      fullName: emp.fullName,
+      companyEmail: emp.companyEmail,
+      netPay: Number(slip.netPay),
+      grossPay: Number(slip.grossPay),
+      month: payroll.month,
+      year: payroll.year,
+      bankAccountNumber: emp.bankAccountNumber,
+      payslipUrl,
+    });
+    sendEmail({ to: emailTo, ...mail }).catch((err: Error) =>
+      console.error(`Failed to send payslip email to ${emailTo}:`, err.message)
+    );
+  }
+
   res.json({ message: "Payroll marked as paid" });
 });
 
