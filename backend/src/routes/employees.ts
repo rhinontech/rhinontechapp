@@ -79,13 +79,24 @@ const employeeEditableFields = [
   "otherAllowances",
 ] as const;
 
+function parseOptionalDate(value: unknown) {
+  if (value === undefined) return undefined;
+  if (value === null || value === "") return null;
+  if (typeof value === "string" && value.trim().toLowerCase() === "invalid date") return null;
+
+  const date = new Date(value as string | number | Date);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 function employeePayload(body: Record<string, any>) {
   const payload: Record<string, any> = {};
   for (const field of employeeEditableFields) {
     if (body[field] !== undefined) payload[field] = body[field];
   }
-  if (body.joiningDate) payload.joiningDate = new Date(body.joiningDate);
-  if (body.dateOfBirth) payload.dateOfBirth = new Date(body.dateOfBirth);
+  const joiningDate = parseOptionalDate(body.joiningDate);
+  const dateOfBirth = parseOptionalDate(body.dateOfBirth);
+  if (joiningDate !== undefined) payload.joiningDate = joiningDate;
+  if (dateOfBirth !== undefined) payload.dateOfBirth = dateOfBirth;
   return payload;
 }
 
@@ -128,12 +139,18 @@ router.post("/", authorize("employees:write"), async (req: AuthRequest, res: Res
   const onboardingToken = crypto.randomUUID();
   const onboardingTokenExpiry = new Date(Date.now() + 48 * 60 * 60 * 1000);
 
+  const parsedJoiningDate = parseOptionalDate(joiningDate);
+  if (!parsedJoiningDate) {
+    res.status(400).json({ message: "A valid joining date is required" });
+    return;
+  }
+
   const employee = await User.create({
     fullName,
     personalEmail,
     roleId,
     department,
-    joiningDate: new Date(joiningDate),
+    joiningDate: parsedJoiningDate,
     companyEmail,
     passwordHash,
     status: req.body.status ?? "active",
