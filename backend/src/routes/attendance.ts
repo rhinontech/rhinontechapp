@@ -1,6 +1,6 @@
 import { Router, Response } from "express";
 import { Op } from "sequelize";
-import { Attendance } from "../models";
+import { Attendance, Role, User } from "../models";
 import { authenticate, AuthRequest } from "../middleware/authenticate";
 
 const router = Router();
@@ -19,6 +19,155 @@ function durationMinutes(clockIn: Date | null | undefined, clockOut: Date | null
   const end = clockOut ? new Date(clockOut) : new Date();
   return Math.max(0, Math.round((end.getTime() - new Date(clockIn).getTime()) / 60000));
 }
+
+function canViewTeamAttendance(req: AuthRequest) {
+  return req.user?.roleSlug === "superadmin" || req.user?.roleSlug === "hr" || req.user?.permissions.includes("employees:read");
+}
+
+function blockSuperadminClock(req: AuthRequest, res: Response) {
+  if (req.user?.roleSlug !== "superadmin") return false;
+  res.status(403).json({ message: "Super admins manage team attendance and do not clock in." });
+  return true;
+}
+
+async function activeNonSuperadminUsers() {
+  const employees = await User.findAll({
+    where: { status: "active" },
+    include: [{ model: Role, as: "role" }],
+    attributes: ["id", "fullName", "companyEmail", "department", "roleId"],
+    order: [["fullName", "ASC"]],
+  });
+
+  return employees.filter((employee) => (employee as any).role?.slug !== "superadmin");
+}
+
+function teamEmployeeJson(employee: User) {
+  const role = (employee as any).role;
+  return {
+    userId: employee.id,
+    fullName: employee.fullName,
+    companyEmail: employee.companyEmail,
+    department: employee.department,
+    roleSlug: role?.slug ?? null,
+    roleName: role?.name ?? null,
+  };
+}
+
+// GET /attendance/team/today
+router.get("/team/today", async (req: AuthRequest, res: Response) => {
+  try {
+    if (!canViewTeamAttendance(req)) {
+      res.status(403).json({ message: "Insufficient permissions" });
+      return;
+    }
+
+    const today = toDateKey(new Date());
+    const employees = await activeNonSuperadminUsers();
+
+    const records = await Attendance.findAll({
+      where: {
+        userId: { [Op.in]: employees.map((employee) => employee.id) },
+        date: today,
+      },
+    });
+    const recordMap = new Map(records.map((record) => [record.userId, record]));
+
+    const rows = employees.map((employee) => {
+      const record = recordMap.get(employee.id);
+      return {
+        ...teamEmployeeJson(employee),
+        attendance: record
+          ? { ...record.toJSON(), durationMinutes: durationMinutes(record.clockIn, record.clockOut) }
+          : { date: today, status: "absent", clockIn: null, clockOut: null, durationMinutes: 0 },
+      };
+    });
+
+    res.json({
+      date: today,
+      summary: {
+        total: rows.length,
+        present: rows.filter((row) => row.attendance.status === "present").length,
+        absent: rows.filter((row) => row.attendance.status === "absent").length,
+        active: rows.filter((row) => row.attendance.clockIn && !row.attendance.clockOut).length,
+      },
+      employees: rows,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch team attendance" });
+  }
+});
+
+// GET /attendance/team?month=5&year=2026
+router.get("/team", async (req: AuthRequest, res: Response) => {
+  try {
+    if (!canViewTeamAttendance(req)) {
+      res.status(403).json({ message: "Insufficient permissions" });
+      return;
+    }
+
+    const now = new Date();
+    const month = parseInt(req.query.month as string) || now.getMonth() + 1;
+    const year = parseInt(req.query.year as string) || now.getFullYear();
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0);
+    const todayStr = toDateKey(now);
+    const employees = await activeNonSuperadminUsers();
+    const employeeIds = employees.map((employee) => employee.id);
+
+    const records = await Attendance.findAll({
+      where: {
+        userId: { [Op.in]: employeeIds },
+        date: { [Op.between]: [startDate, endDate] },
+      },
+    });
+    const recordMap = new Map(records.map((record) => [`${record.userId}:${toDateKey(new Date(record.date))}`, record]));
+
+    const days: string[] = [];
+    for (let d = 1; d <= endDate.getDate(); d++) {
+      const date = new Date(year, month - 1, d);
+      const key = toDateKey(date);
+      if (key > todayStr) break;
+      days.push(key);
+    }
+
+    const rows = employees.map((employee) => {
+      let presentDays = 0;
+      let totalMinutes = 0;
+      const attendance = days.map((date) => {
+        const record = recordMap.get(`${employee.id}:${date}`);
+        if (record) {
+          const minutes = durationMinutes(record.clockIn, record.clockOut);
+          if (record.status === "present") presentDays += 1;
+          totalMinutes += minutes;
+          return { ...record.toJSON(), durationMinutes: minutes };
+        }
+
+        const weekend = isWeekend(new Date(`${date}T00:00:00`));
+        return {
+          id: null,
+          userId: employee.id,
+          date,
+          clockIn: null,
+          clockOut: null,
+          status: weekend ? "weekend" : "absent",
+          note: weekend ? "Weekend" : null,
+          durationMinutes: 0,
+        };
+      });
+
+      return {
+        ...teamEmployeeJson(employee),
+        presentDays,
+        totalMinutes,
+        attendance,
+      };
+    });
+
+    res.json({ month, year, days, employees: rows });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch team monthly attendance" });
+  }
+});
 
 // GET /attendance?month=5&year=2026
 // Returns a full month view with auto-computed weekend/absent days
@@ -98,6 +247,8 @@ router.get("/today", async (req: AuthRequest, res: Response) => {
 // POST /attendance/clock-in
 router.post("/clock-in", async (req: AuthRequest, res: Response) => {
   try {
+    if (blockSuperadminClock(req, res)) return;
+
     const today = toDateKey(new Date());
     const now = new Date();
 
@@ -128,6 +279,8 @@ router.post("/clock-in", async (req: AuthRequest, res: Response) => {
 // POST /attendance/clock-out
 router.post("/clock-out", async (req: AuthRequest, res: Response) => {
   try {
+    if (blockSuperadminClock(req, res)) return;
+
     const today = toDateKey(new Date());
     const now = new Date();
 

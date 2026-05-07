@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import Cookies from "js-cookie";
 import { TbFileInvoice, TbDownload } from "react-icons/tb";
 import { SubNavToggle } from "@/components/Admin/Common/CollapsibleSubNav/CollapsibleSubNav";
 
@@ -21,26 +20,20 @@ const MONTHS = ["January","February","March","April","May","June","July","August
 
 export function PayslipsList() {
   const [payslips, setPayslips] = useState<Payslip[]>([]);
-  const [permissions, setPermissions] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const roleSlug = pathname.split("/")[1];
+  const isAdminView = roleSlug === "superadmin" || roleSlug === "hr";
 
   useEffect(() => {
-    let parsedPermissions: string[] = [];
-    try {
-      parsedPermissions = JSON.parse(Cookies.get("permissions") ?? "[]");
-    } catch {
-      parsedPermissions = [];
-    }
-    setPermissions(parsedPermissions);
-
-    const token = Cookies.get("authToken");
-    const isAdmin = parsedPermissions.includes("payroll:write");
+    const token = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("authToken="))
+      ?.split("=")[1];
     const runId = new URLSearchParams(window.location.search).get("run");
     const params = new URLSearchParams();
     if (runId) params.set("run", runId);
-    const endpoint = isAdmin
+    const endpoint = isAdminView
       ? `/payroll/admin/payslips${params.toString() ? `?${params.toString()}` : ""}`
       : "/payroll/me/payslips";
 
@@ -51,9 +44,7 @@ export function PayslipsList() {
       .then((data) => setPayslips(Array.isArray(data) ? data : []))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
-
-  const isAdmin = permissions?.includes("payroll:write") ?? false;
+  }, [isAdminView]);
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-stone-100 rounded-r-xl">
@@ -63,7 +54,7 @@ export function PayslipsList() {
       </div>
 
       <div className="flex-1 overflow-auto p-5">
-        {permissions === null || loading ? (
+        {loading ? (
           <p className="text-sm text-gray-400">Loading...</p>
         ) : payslips.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-100 p-12 text-center text-gray-400 text-sm">No payslips found.</div>
@@ -76,7 +67,7 @@ export function PayslipsList() {
                   <div>
                     <p className="font-medium text-gray-900">{MONTHS[slip.payroll.month - 1]} {slip.payroll.year}</p>
                     <p className="text-xs text-gray-400 mt-0.5">
-                      {isAdmin && slip.employee ? `${slip.employee.fullName} · ` : ""}
+                      {isAdminView && slip.employee ? `${slip.employee.fullName} · ` : ""}
                       Net ₹{Number(slip.netPay).toLocaleString("en-IN")} · Gross ₹{Number(slip.grossPay).toLocaleString("en-IN")}
                     </p>
                   </div>

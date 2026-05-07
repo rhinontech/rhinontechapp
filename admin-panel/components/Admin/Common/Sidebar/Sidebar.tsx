@@ -21,6 +21,18 @@ export function Sidebar() {
   const [permissions, setPermissions] = useState<string[]>([]);
 
   const roleSlug = pathname.split("/")[1] || "";
+  const previewPermissions: Record<string, string[]> = {
+    superadmin: [
+      "dashboard:read",
+      "inbox:read",
+      "people:read",
+      "payslips:read",
+      "provisioning:read",
+      "settings:read",
+    ],
+    hr: ["dashboard:read", "people:read", "payslips:read"],
+    employee: ["dashboard:read", "people:read", "payslips:read"],
+  };
 
   useEffect(() => {
     try {
@@ -41,7 +53,11 @@ export function Sidebar() {
     { title: "Attendance",  icon: <TbCalendarTime size={20} className="h-5 w-5 flex-shrink-0" />, href: `/${roleSlug}/attendance`,   permission: "dashboard:read" },
     { title: "Provisioning",icon: <MdOutlineCloud size={20} className="h-5 w-5 flex-shrink-0" />, href: `/${roleSlug}/provisioning`, permission: "provisioning:read" },
     { title: "Settings",    icon: <RiSettings3Fill size={20} className="h-5 w-5 flex-shrink-0" />,href: `/${roleSlug}/settings`,     permission: "settings:read" },
-  ].filter((item) => permissions.includes(item.permission));
+  ].filter((item) => {
+    if (!permissions.includes(item.permission)) return false;
+    const rolePermissions = previewPermissions[roleSlug];
+    return rolePermissions ? rolePermissions.includes(item.permission) : true;
+  });
 
   return (
     <aside

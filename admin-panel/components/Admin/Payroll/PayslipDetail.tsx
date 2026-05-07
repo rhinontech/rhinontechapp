@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { TbArrowLeft, TbPrinter } from "react-icons/tb";
 import adminImages from "@/constants/admin/images";
@@ -75,12 +75,12 @@ export function PayslipDetail({ id }: { id: string }) {
   const [slip, setSlip] = useState<PayslipData | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const roleSlug = usePathname().split("/")[1];
+  const isAdminView = roleSlug === "superadmin" || roleSlug === "hr";
 
   useEffect(() => {
     const token = Cookies.get("authToken");
-    let permissions: string[] = [];
-    try { permissions = JSON.parse(Cookies.get("permissions") ?? "[]"); } catch { /* */ }
-    const endpoint = permissions.includes("payroll:write")
+    const endpoint = isAdminView
       ? `/payroll/admin/payslips/${id}`
       : `/payroll/me/payslips/${id}`;
 
@@ -91,7 +91,7 @@ export function PayslipDetail({ id }: { id: string }) {
       .then(setSlip)
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, isAdminView]);
 
   if (loading) return <div className="h-full flex items-center justify-center text-sm text-gray-400">Loading…</div>;
   if (!slip) return <div className="h-full flex items-center justify-center text-sm text-gray-400">Payslip not found.</div>;

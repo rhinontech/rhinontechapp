@@ -13,7 +13,9 @@ function AttendanceLayoutContent({ children }: { children: React.ReactNode }) {
 
   const items = [
     { label: "Overview", href: base, icon: <TbLayoutDashboard size={18} />, exact: true },
-    { label: "My Attendance", href: `${base}/my`, icon: <TbCalendarStats size={18} /> },
+    ...(roleSlug === "superadmin"
+      ? []
+      : [{ label: "My Attendance", href: `${base}/my`, icon: <TbCalendarStats size={18} /> }]),
   ];
 
   return (

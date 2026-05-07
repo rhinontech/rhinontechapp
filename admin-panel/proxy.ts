@@ -55,8 +55,13 @@ export function proxy(request: NextRequest) {
 
   const roleSlug = payload.roleSlug as string;
   const urlRole = pathname.split("/")[1];
+  const allowedPreviewRoles = ["superadmin", "hr", "employee"];
 
-  if (urlRole && urlRole !== roleSlug) {
+  if (
+    urlRole &&
+    urlRole !== roleSlug &&
+    !(roleSlug === "superadmin" && allowedPreviewRoles.includes(urlRole))
+  ) {
     return NextResponse.redirect(
       new URL(`/${roleSlug}/dashboard`, request.url)
     );

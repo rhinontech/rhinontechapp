@@ -280,8 +280,23 @@ export default function DashboardPage() {
 
             {/* Today's Attendance */}
             <div className="col-span-7 rounded-xl border border-gray-100 bg-white overflow-hidden">
-              <SectionTitle icon={<TbClock size={16} />} title="Today's Attendance" />
+              <SectionTitle icon={<TbClock size={16} />} title={isSuperadmin ? "Team Attendance" : "Today's Attendance"} />
               <div className="p-5">
+                {isSuperadmin ? (
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm text-gray-500">Super admins manage team attendance instead of clocking in.</p>
+                      <p className="mt-2 text-xs text-gray-400">Use Attendance to review who is present, absent, or active today.</p>
+                    </div>
+                    <a
+                      href={`/${roleSlug}/attendance`}
+                      className="rounded-lg bg-gray-900 px-5 py-2 text-sm font-semibold text-white hover:bg-gray-700"
+                    >
+                      View team attendance
+                    </a>
+                  </div>
+                ) : (
+                <>
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-4">
                     {clocked ? (
@@ -375,6 +390,8 @@ export default function DashboardPage() {
                     <span>12 AM</span><span>6 AM</span><span>12 PM</span><span>6 PM</span><span>12 AM</span>
                   </div>
                 </div>
+                </>
+                )}
               </div>
             </div>
 
