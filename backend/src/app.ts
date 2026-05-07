@@ -15,7 +15,11 @@ import dashboardRoutes from "./routes/dashboard";
 
 const app = express();
 
-const allowedOrigins = [env.frontendUrl, "http://localhost:4200", "http://localhost:3000"].filter(Boolean);
+const allowedOrigins = [
+  ...env.frontendUrls,
+  "http://localhost:4200",
+  "http://localhost:3000",
+].filter(Boolean);
 app.use(cors({ origin: (origin, cb) => cb(null, !origin || allowedOrigins.includes(origin)), credentials: true }));
 app.use(express.json());
 
