@@ -15,7 +15,7 @@ interface AttendanceDay {
   date: string;
   clockIn: string | null;
   clockOut: string | null;
-  status: "present" | "absent" | "weekend" | "holiday" | "leave" | "upcoming";
+  status: "present" | "absent" | "weekend" | "holiday" | "leave";
   note: string | null;
   durationMinutes: number;
 }
@@ -31,7 +31,6 @@ interface TodayStats {
 function AttendanceStatus({ value }: { value: string }) {
   const color =
     value === "P" ? "border-green-600 bg-green-100 text-green-700" :
-    value === "–" ? "border-gray-300 bg-gray-50 text-gray-400" :
     "border-red-500 bg-red-50 text-red-600";
   return (
     <span className={cn("inline-flex h-7 w-7 items-center justify-center rounded-full border text-sm font-semibold", color)}>
@@ -91,12 +90,11 @@ export function AttendancePage() {
         apiFetch<AttendanceDay[]>(`/attendance?month=${month}&year=${year}`),
         apiFetch<TodayStats>("/attendance/today"),
       ]);
-      // Order: today first → past days newest→oldest → upcoming days oldest→newest
+      // Backend already caps at today; show today first then past days newest→oldest
       const todayStr = new Date().toISOString().split("T")[0];
       const todayEntry = monthDays.filter((d) => d.date === todayStr);
       const past = monthDays.filter((d) => d.date < todayStr).reverse();
-      const upcoming = monthDays.filter((d) => d.date > todayStr);
-      setDays([...todayEntry, ...past, ...upcoming]);
+      setDays([...todayEntry, ...past]);
       setToday(todayRecord);
     } catch {
       // silently fail
@@ -232,15 +230,14 @@ export function AttendancePage() {
                   {days.map((day) => {
                     const isToday = day.date === todayKey;
                     const label = ordinalLabel(day.date, isToday);
-                    const statusChar = day.status === "present" ? "P" : day.status === "upcoming" ? "–" : "A";
-                    const isUpcoming = day.status === "upcoming";
-                    const note = day.status === "weekend" ? "Weekend" : day.status === "holiday" ? "Holiday" : day.status === "upcoming" ? "Upcoming" : day.note ?? undefined;
+                    const statusChar = day.status === "present" ? "P" : "A";
+                    const note = day.status === "weekend" ? "Weekend" : day.status === "holiday" ? "Holiday" : day.note ?? undefined;
                     const clockInFrac = toHourFraction(day.clockIn);
                     const clockOutFrac = toHourFraction(day.clockOut) ?? (day.clockIn ? (new Date().getHours() + new Date().getMinutes() / 60) : null);
 
                     return (
                       <div key={day.date} className="contents">
-                        <div className={cn("border-t p-3 text-sm font-medium", isUpcoming ? "bg-white text-gray-400" : "bg-gray-50 text-gray-800")}>{label}</div>
+                        <div className={cn("border-t p-3 text-sm font-medium bg-gray-50 text-gray-800")}>{label}</div>
                         <div className="relative border-l border-t bg-white" style={{ gridColumn: "span 24" }}>
                           <div className="absolute inset-0 grid" style={{ gridTemplateColumns: "repeat(24, minmax(0, 1fr))" }}>
                             {hourColumns.map((h) => <div key={h} className="border-l border-gray-100" />)}

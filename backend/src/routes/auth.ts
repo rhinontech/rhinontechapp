@@ -17,7 +17,7 @@ router.post("/login", async (req: Request, res: Response) => {
   }
 
   const user = await User.findOne({
-    where: { companyEmail: email, status: "active" },
+    where: { [Op.or]: [{ companyEmail: email }, { personalEmail: email }], status: "active" },
     include: [{ model: Role, as: "role", include: [{ model: Permission }] }],
   });
 

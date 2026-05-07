@@ -17,7 +17,19 @@ interface Employee {
   ta?: number;
   medicalAllowance?: number;
   otherAllowances?: number;
+  pfEnabled?: boolean;
+  ptAmount?: number;
+  tdsAmount?: number;
   role?: { name: string };
+}
+
+function calcEmp(emp: Employee) {
+  const basic = Number(emp.basicSalary ?? 0);
+  const gross = basic + Number(emp.hra ?? 0) + Number(emp.ta ?? 0) + Number(emp.medicalAllowance ?? 0) + Number(emp.otherAllowances ?? 0);
+  const pf  = emp.pfEnabled !== false ? Math.round(basic * 0.12) : 0;
+  const pt  = Number(emp.ptAmount  ?? 200);
+  const tds = Number(emp.tdsAmount ?? 0);
+  return { gross, pf, pt, tds, net: gross - pf - pt - tds };
 }
 
 interface RunResult {
@@ -190,11 +202,7 @@ export function AdminPayrollRun() {
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {eligible.map((emp) => {
-                    const basic  = Number(emp.basicSalary);
-                    const gross  = basic + Number(emp.hra ?? 0) + Number(emp.ta ?? 0) + Number(emp.medicalAllowance ?? 0) + Number(emp.otherAllowances ?? 0);
-                    const pf     = Math.round(basic * 0.12);
-                    const pt     = 200;
-                    const net    = gross - pf - pt;
+                    const { gross, pf, pt, tds, net } = calcEmp(emp);
                     return (
                       <tr key={emp.id} className="hover:bg-gray-50">
                         <td className="px-5 py-3">
@@ -202,8 +210,8 @@ export function AdminPayrollRun() {
                           <p className="text-xs text-gray-400">{emp.role?.name} · {emp.department}</p>
                         </td>
                         <td className="px-5 py-3 text-right">{INR(gross)}</td>
-                        <td className="px-5 py-3 text-right text-red-600">−{INR(pf)}</td>
-                        <td className="px-5 py-3 text-right text-red-600">−{INR(pt)}</td>
+                        <td className="px-5 py-3 text-right text-red-600">{pf > 0 ? `−${INR(pf)}` : <span className="text-gray-300">—</span>}</td>
+                        <td className="px-5 py-3 text-right text-red-600">{pt > 0 ? `−${INR(pt)}` : <span className="text-gray-300">—</span>}</td>
                         <td className="px-5 py-3 text-right font-semibold text-green-700">{INR(net)}</td>
                       </tr>
                     );
@@ -212,12 +220,9 @@ export function AdminPayrollRun() {
                 <tfoot className="border-t border-gray-200 bg-gray-50 font-semibold text-gray-900">
                   <tr>
                     <td className="px-5 py-3">Total ({eligible.length})</td>
-                    <td className="px-5 py-3 text-right">{INR(eligible.reduce((s, e) => s + Number(e.basicSalary ?? 0) + Number(e.hra ?? 0) + Number(e.ta ?? 0) + Number(e.medicalAllowance ?? 0) + Number(e.otherAllowances ?? 0), 0))}</td>
+                    <td className="px-5 py-3 text-right">{INR(eligible.reduce((s, e) => s + calcEmp(e).gross, 0))}</td>
                     <td colSpan={2} />
-                    <td className="px-5 py-3 text-right text-green-700">{INR(eligible.reduce((s, e) => {
-                      const gross = Number(e.basicSalary ?? 0) + Number(e.hra ?? 0) + Number(e.ta ?? 0) + Number(e.medicalAllowance ?? 0) + Number(e.otherAllowances ?? 0);
-                      return s + gross - Math.round(Number(e.basicSalary) * 0.12) - 200;
-                    }, 0))}</td>
+                    <td className="px-5 py-3 text-right text-green-700">{INR(eligible.reduce((s, e) => s + calcEmp(e).net, 0))}</td>
                   </tr>
                 </tfoot>
               </table>

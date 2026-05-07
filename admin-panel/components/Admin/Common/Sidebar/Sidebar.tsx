@@ -28,7 +28,7 @@ export function Sidebar() {
 
   const navItems = [
     { title: "Dashboard",   icon: <MdDashboard size={20} className="h-5 w-5 flex-shrink-0" />,   href: `/${roleSlug}/dashboard`,    permission: "dashboard:read" },
-    { title: "Inbox",       icon: <HiInbox size={20} className="h-5 w-5 flex-shrink-0" />,        href: `/${roleSlug}/inbox`,        permission: "dashboard:read" },
+    { title: "Inbox",       icon: <HiInbox size={20} className="h-5 w-5 flex-shrink-0" />,        href: `/${roleSlug}/inbox`,        permission: "inbox:read" },
     { title: "Team",        icon: <FaUserGroup size={20} className="h-5 w-5 flex-shrink-0" />,    href: `/${roleSlug}/employees`,    permission: "people:read" },
     { title: "Payroll",     icon: <TbCash size={20} className="h-5 w-5 flex-shrink-0" />,         href: `/${roleSlug}/payroll`,      permission: "payslips:read" },
     { title: "Work",        icon: <TbBriefcase size={20} className="h-5 w-5 flex-shrink-0" />,    href: `/${roleSlug}/work`,         permission: "dashboard:read" },

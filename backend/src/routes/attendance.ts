@@ -43,10 +43,12 @@ router.get("/", async (req: AuthRequest, res: Response) => {
       recordMap.set(toDateKey(new Date(r.date)), r);
     }
 
+    const todayStr = toDateKey(now);
     const days = [];
     for (let d = 1; d <= endDate.getDate(); d++) {
       const date = new Date(year, month - 1, d);
       const key = toDateKey(date);
+      if (key > todayStr) break; // stop at today
       const existing = recordMap.get(key);
 
       if (existing) {
@@ -56,15 +58,14 @@ router.get("/", async (req: AuthRequest, res: Response) => {
         });
       } else {
         const weekend = isWeekend(date);
-        const isFuture = date > now;
         days.push({
           id: null,
           userId: req.user!.userId,
           date: key,
           clockIn: null,
           clockOut: null,
-          status: weekend ? "weekend" : isFuture ? "upcoming" : "absent",
-          note: weekend ? "Weekend" : isFuture ? "Upcoming" : null,
+          status: weekend ? "weekend" : "absent",
+          note: weekend ? "Weekend" : null,
           durationMinutes: 0,
         });
       }

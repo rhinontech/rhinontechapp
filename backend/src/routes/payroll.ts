@@ -31,7 +31,7 @@ router.get("/me/payslips/:id", authorize("payslips:read"), async (req: AuthReque
       {
         model: User,
         as: "employee",
-        attributes: ["fullName", "companyEmail", "department", "joiningDate"],
+        attributes: ["fullName", "legalName", "companyEmail", "department", "joiningDate", "dateOfBirth", "pan", "bankAccountNumber", "bankIfscCode", "roleTitle"],
         include: [{ model: Role, as: "role", attributes: ["name"] }],
       },
     ],
@@ -135,7 +135,7 @@ router.get("/admin/payslips/:id", authorize("payroll:write"), async (req: AuthRe
       {
         model: User,
         as: "employee",
-        attributes: ["fullName", "companyEmail", "department", "joiningDate"],
+        attributes: ["fullName", "legalName", "companyEmail", "department", "joiningDate", "dateOfBirth", "pan", "bankAccountNumber", "bankIfscCode", "roleTitle"],
         include: [{ model: Role, as: "role", attributes: ["name"] }],
       },
     ],
@@ -169,7 +169,7 @@ router.post("/admin/run", authorize("payroll:write"), async (req: AuthRequest, r
   // Fetch all active employees who have a salary configured
   const employees = await User.findAll({
     where: { status: "active" },
-    attributes: ["id", "basicSalary", "hra", "ta", "medicalAllowance", "otherAllowances"],
+    attributes: ["id", "basicSalary", "hra", "ta", "medicalAllowance", "otherAllowances", "pfEnabled", "ptAmount", "tdsAmount"],
   });
 
   const eligible = employees.filter((e) => e.basicSalary && Number(e.basicSalary) > 0);

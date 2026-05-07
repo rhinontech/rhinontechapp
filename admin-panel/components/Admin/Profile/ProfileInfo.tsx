@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { SubNavToggle } from "@/components/Admin/Common/CollapsibleSubNav/CollapsibleSubNav";
+import { WorkSchedulePicker } from "@/components/Admin/Common/WorkSchedulePicker";
 import {
   TbPencil, TbCheck, TbX, TbLoader2, TbAlertCircle,
   TbMail, TbBuildingSkyscraper, TbCalendar, TbShield,
@@ -203,17 +204,15 @@ export function ProfileInfo() {
                   <InputField label="PAN" name="pan" value={form.pan ?? ""} onChange={(v) => setForm((f) => ({ ...f, pan: v.toUpperCase() }))} hint="10-character PAN number" />
                   <InputField label="Work Location" name="workLocation" value={form.workLocation ?? ""} onChange={(v) => setForm((f) => ({ ...f, workLocation: v }))} />
 
-                  {(["employmentType", "compensationType", "workSchedule", "paymentFrequency"] as const).map((key) => {
+                  {(["employmentType", "compensationType", "paymentFrequency"] as const).map((key) => {
                     const opts: Record<string, string[]> = {
                       employmentType:   ["Full-Time", "Part-Time", "Contract", "Intern"],
                       compensationType: ["Salaried", "Hourly", "Contract"],
-                      workSchedule:     ["11 AM – 8 PM (Mon–Sat)", "Flexible", "Shift", "Remote"],
                       paymentFrequency: ["Monthly", "Bi-Weekly", "Weekly"],
                     };
                     const labels: Record<string, string> = {
                       employmentType:   "Employment Type",
                       compensationType: "Compensation Type",
-                      workSchedule:     "Work Schedule",
                       paymentFrequency: "Payment Frequency",
                     };
                     return (
@@ -229,6 +228,14 @@ export function ProfileInfo() {
                       </div>
                     );
                   })}
+
+                  <div className="col-span-2 flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-gray-500">Work Schedule</label>
+                    <WorkSchedulePicker
+                      value={form.workSchedule ?? "11 AM – 8 PM (Mon–Sat)"}
+                      onChange={(v) => setForm((f) => ({ ...f, workSchedule: v }))}
+                    />
+                  </div>
 
                   <div className="flex items-center gap-3">
                     <label className="text-xs font-medium text-gray-500">Remote Position</label>

@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Cookies from "js-cookie";
 import { TbCamera, TbLayoutSidebarFilled, TbLayoutSidebarRightFilled, TbPencil, TbPlus, TbSearch } from "react-icons/tb";
 import { cn } from "@/lib/utils";
+import { WorkSchedulePicker } from "@/components/Admin/Common/WorkSchedulePicker";
 
 interface Role {
   id: string;
@@ -674,7 +675,13 @@ export function PeopleDirectory() {
                   <FormInput label="Work location" value={form.workLocation} onChange={(value) => updateForm("workLocation", value)} />
                   <FormInput label="Employment type" value={form.employmentType} onChange={(value) => updateForm("employmentType", value)} />
                   <FormInput label="Compensation type" value={form.compensationType} onChange={(value) => updateForm("compensationType", value)} />
-                  <FormInput label="Work schedule" value={form.workSchedule} onChange={(value) => updateForm("workSchedule", value)} />
+                  <div className="col-span-2 flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-gray-500">Work Schedule</label>
+                    <WorkSchedulePicker
+                      value={form.workSchedule || "11 AM – 8 PM (Mon–Sat)"}
+                      onChange={(v) => updateForm("workSchedule", v)}
+                    />
+                  </div>
                   <FormInput label="Payment frequency" value={form.paymentFrequency} onChange={(value) => updateForm("paymentFrequency", value)} />
                   <FormInput label="Annual compensation" type="number" value={form.annualCompensation} onChange={(value) => updateForm("annualCompensation", value)} />
                   <FormInput label="Annual variable pay" type="number" value={form.annualVariablePay} onChange={(value) => updateForm("annualVariablePay", value)} />

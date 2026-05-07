@@ -39,7 +39,7 @@ async function seed() {
   // HR role — team + payroll, no provisioning/settings
   const hrPerms = allPerms.filter((p) =>
     ["dashboard:read", "employees:read", "employees:write", "people:read",
-     "payroll:read", "payroll:write", "payslips:read", "inbox:read", "inbox:write"].includes(p.name)
+     "payroll:read", "payroll:write", "payslips:read"].includes(p.name)
   );
   const [hrRole] = await Role.findOrCreate({
     where: { slug: "hr" },
