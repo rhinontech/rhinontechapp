@@ -14,6 +14,7 @@ interface InboxEmailAttributes {
   subject: string;
   body: string;
   snippet: string;
+  ownerEmail: string;
   isRead: boolean;
   isStarred: boolean;
   hasAttachment: boolean;
@@ -42,6 +43,7 @@ export class InboxEmail
   declare subject: string;
   declare body: string;
   declare snippet: string;
+  declare ownerEmail: string;
   declare isRead: boolean;
   declare isStarred: boolean;
   declare hasAttachment: boolean;
@@ -95,6 +97,11 @@ InboxEmail.init(
     snippet: {
       type: DataTypes.TEXT,
       allowNull: false,
+    },
+    ownerEmail: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: "admin@rhinontech.in",
     },
     isRead: {
       type: DataTypes.BOOLEAN,

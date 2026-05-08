@@ -13,7 +13,7 @@ const folders = new Set(["inbox", "sent", "drafts", "archive", "trash"]);
 
 router.get("/", authorize("inbox:read"), async (req: AuthRequest, res: Response) => {
   const { folder = "inbox", search, starred } = req.query;
-  const where: WhereOptions = {};
+  const where: WhereOptions = { ownerEmail: req.user?.companyEmail || "admin@rhinontech.in" };
 
   if (typeof folder === "string" && folders.has(folder)) {
     where.folder = folder;
@@ -50,12 +50,17 @@ router.get("/:id", authorize("inbox:read"), async (req: AuthRequest, res: Respon
     return;
   }
 
+  if (email.ownerEmail !== (req.user?.companyEmail || "admin@rhinontech.in")) {
+    res.status(403).json({ message: "Forbidden" });
+    return;
+  }
+
   if (!email.isRead) {
     await email.update({ isRead: true });
   }
 
   const thread = await InboxEmail.findAll({
-    where: { threadKey: email.threadKey },
+    where: { threadKey: email.threadKey, ownerEmail: req.user?.companyEmail || "admin@rhinontech.in" },
     order: [["sentAt", "ASC"]],
   });
 
@@ -101,6 +106,7 @@ router.post("/", authorize("inbox:write"), async (req: AuthRequest, res: Respons
     subject,
     body,
     snippet: body.slice(0, 160),
+    ownerEmail: fromEmail,
     isRead: true,
     isStarred: false,
     hasAttachment: false,
@@ -134,6 +140,7 @@ router.post("/:id/reply", authorize("inbox:write"), async (req: AuthRequest, res
     subject: original.subject.startsWith("Re:") ? original.subject : `Re: ${original.subject}`,
     body: body.trim(),
     snippet: body.trim().slice(0, 160),
+    ownerEmail: req.user?.companyEmail || "admin@rhinontech.in",
     isRead: true,
     isStarred: false,
     hasAttachment: false,
@@ -162,6 +169,11 @@ router.patch("/:id", authorize("inbox:write"), async (req: AuthRequest, res: Res
 
   if (!email) {
     res.status(404).json({ message: "Email not found" });
+    return;
+  }
+
+  if (email.ownerEmail !== (req.user?.companyEmail || "admin@rhinontech.in")) {
+    res.status(403).json({ message: "Forbidden" });
     return;
   }
 

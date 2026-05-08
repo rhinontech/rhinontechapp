@@ -13,6 +13,7 @@ import tasksRoutes from "./routes/tasks";
 import attendanceRoutes from "./routes/attendance";
 import dashboardRoutes from "./routes/dashboard";
 import workRoutes from "./routes/work";
+import webhooksRoutes from "./routes/webhooks";
 
 const app = express();
 
@@ -36,6 +37,9 @@ app.use("/tasks", tasksRoutes);
 app.use("/attendance", attendanceRoutes);
 app.use("/dashboard", dashboardRoutes);
 app.use("/work", workRoutes);
+
+// Use text parser for SNS webhooks since AWS SNS sends content-type text/plain
+app.use("/webhooks", express.text({ type: ["application/json", "text/plain"] }), webhooksRoutes);
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
