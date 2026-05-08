@@ -5,7 +5,7 @@ import { SubNavToggle } from "@/components/Admin/Common/CollapsibleSubNav/Collap
 import { useSideNav } from "@/context/SideNavContext";
 import { cn } from "@/lib/utils";
 import { apiFetch } from "@/lib/api";
-import { TbLayoutSidebarFilled, TbLayoutSidebarRightFilled, TbPlus } from "react-icons/tb";
+import { TbLayoutSidebarFilled, TbLayoutSidebarRightFilled, TbPlus, TbCheck } from "react-icons/tb";
 
 type RequestType = "Bug" | "Change request";
 type RequestStatus = "Open" | "In review" | "In progress" | "Done";
@@ -49,6 +49,22 @@ const emptyForm = {
   reportedBy: "",
 };
 
+const statusOptions: RequestStatus[] = ["Open", "In review", "In progress", "Done"];
+const priorityOptions: RequestPriority[] = ["Low", "Medium", "High"];
+
+const statusStyles: Record<RequestStatus, string> = {
+  Open: "border-blue-100 bg-blue-50 text-blue-700",
+  "In review": "border-violet-100 bg-violet-50 text-violet-700",
+  "In progress": "border-amber-100 bg-amber-50 text-amber-700",
+  Done: "border-green-100 bg-green-50 text-green-700",
+};
+
+const priorityStyles: Record<RequestPriority, string> = {
+  Low: "border-gray-100 bg-gray-50 text-gray-600",
+  Medium: "border-amber-100 bg-amber-50 text-amber-700",
+  High: "border-red-100 bg-red-50 text-red-700",
+};
+
 export function WorkChangesPage() {
   const { isExpanded: isSubNavExpanded } = useSideNav();
   const [projects, setProjects] = useState<ProjectOption[]>([]);
@@ -62,6 +78,8 @@ export function WorkChangesPage() {
   const [mode, setMode] = useState<PanelMode>("view");
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [converting, setConverting] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -150,6 +168,84 @@ export function WorkChangesPage() {
     }
   };
 
+  const updateRequestField = async <K extends "status" | "priority">(
+    request: WorkRequest,
+    field: K,
+    value: WorkRequest[K]
+  ) => {
+    const previousRequests = requests;
+    const previousSelected = selectedRequest;
+    const updated = { ...request, [field]: value };
+    setRequests((current) => current.map((item) => (item.id === request.id ? updated : item)));
+    setSelectedRequest((current) => (current?.id === request.id ? updated : current));
+
+    try {
+      await apiFetch(`/work/requests/${request.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          title: request.title,
+          description: request.description,
+          type: request.type,
+          status: field === "status" ? value : request.status,
+          priority: field === "priority" ? value : request.priority,
+          projectId: request.project?.id || undefined,
+          reportedBy: request.reportedBy || undefined,
+        }),
+      });
+      await fetchData();
+    } catch {
+      setRequests(previousRequests);
+      setSelectedRequest(previousSelected);
+    }
+  };
+
+  const convertToTasks = async (requestIds: string[]) => {
+    setConverting(true);
+    try {
+      await apiFetch("/work/requests/convert-to-tasks", {
+        method: "POST",
+        body: JSON.stringify({ requestIds }),
+      });
+      setSelectedIds(new Set());
+      setMode("view");
+      // Could add a success toast here
+    } catch {
+      // silently fail
+    } finally {
+      setConverting(false);
+    }
+  };
+
+  const handleConvertSelected = () => {
+    if (selectedIds.size > 0) {
+      convertToTasks(Array.from(selectedIds));
+    }
+  };
+
+  const handleConvertSingle = () => {
+    if (selectedRequest) {
+      convertToTasks([selectedRequest.id]);
+    }
+  };
+
+  const toggleSelectRequest = (requestId: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(requestId)) {
+      newSelected.delete(requestId);
+    } else {
+      newSelected.add(requestId);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === visibleRequests.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(visibleRequests.map((r) => r.id)));
+    }
+  };
+
   return (
     <div className="flex h-full min-h-0 gap-2 overflow-hidden">
       <main className={cn("flex h-full min-h-0 w-full flex-col overflow-hidden bg-stone-50", isSubNavExpanded ? "rounded-r-xl" : "rounded-xl")}>
@@ -210,35 +306,95 @@ export function WorkChangesPage() {
             </select>
           </div>
 
+          {selectedIds.size > 0 && (
+            <div className="mt-4 flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
+              <span className="text-sm font-medium text-blue-900">{selectedIds.size} item{selectedIds.size !== 1 ? "s" : ""} selected</span>
+              <button
+                onClick={handleConvertSelected}
+                disabled={converting}
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+              >
+                <TbCheck size={14} />
+                {converting ? "Creating..." : "Create Tasks"}
+              </button>
+            </div>
+          )}
+
           <div className="mt-8 overflow-auto rounded-xl border border-gray-100 bg-white">
-            <div className="grid min-w-[980px] grid-cols-[1.4fr_1.2fr_0.9fr_0.9fr_0.9fr_1fr] border-b bg-stone-100 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
-              <span>Title</span>
-              <span>Project</span>
-              <span>Type</span>
-              <span>Status</span>
-              <span>Priority</span>
-              <span>Reported by</span>
+            <div className="grid min-w-[1160px] w-full grid-cols-[40px_minmax(300px,1.55fr)_minmax(190px,0.95fr)_minmax(150px,0.75fr)_minmax(130px,0.65fr)_minmax(130px,0.65fr)_minmax(210px,1fr)] border-b bg-stone-100 text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <span className="flex items-center justify-center px-4 py-3">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.size === visibleRequests.length && visibleRequests.length > 0}
+                  onChange={toggleSelectAll}
+                  className="rounded border-gray-300"
+                  aria-label="Select all"
+                />
+              </span>
+              <span className="px-4 py-3">Title</span>
+              <span className="px-4 py-3">Project</span>
+              <span className="px-4 py-3">Type</span>
+              <span className="px-4 py-3">Status</span>
+              <span className="px-4 py-3">Priority</span>
+              <span className="px-4 py-3">Reported by</span>
             </div>
             {visibleRequests.map((request) => (
-              <button
+              <div
                 key={request.id}
+                role="button"
+                tabIndex={0}
                 onClick={() => {
                   setSelectedRequest(request);
                   setMode("view");
                   setIsPreviewExpanded(true);
                 }}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter" && event.key !== " ") return;
+                  setSelectedRequest(request);
+                  setMode("view");
+                  setIsPreviewExpanded(true);
+                }}
                 className={cn(
-                  "grid min-w-[980px] grid-cols-[1.4fr_1.2fr_0.9fr_0.9fr_0.9fr_1fr] items-center border-b px-4 py-3 text-left text-sm hover:bg-stone-50",
+                  "grid min-w-[1160px] w-full cursor-pointer grid-cols-[40px_minmax(300px,1.55fr)_minmax(190px,0.95fr)_minmax(150px,0.75fr)_minmax(130px,0.65fr)_minmax(130px,0.65fr)_minmax(210px,1fr)] items-stretch border-b text-left text-sm hover:bg-stone-50",
                   selectedRequest?.id === request.id && "bg-blue-50 hover:bg-blue-50"
                 )}
               >
-                <span className="font-medium text-gray-900">{request.title}</span>
-                <span className="truncate text-gray-600">{request.project?.name || "—"}</span>
-                <span className="text-gray-600">{request.type}</span>
-                <span className="text-gray-600">{request.status}</span>
-                <span className="text-gray-600">{request.priority}</span>
-                <span className="truncate text-gray-600">{request.reportedBy || "—"}</span>
-              </button>
+                <span
+                  className="flex items-center justify-center px-4 py-3"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleSelectRequest(request.id);
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(request.id)}
+                    onChange={() => toggleSelectRequest(request.id)}
+                    className="rounded border-gray-300"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </span>
+                <span className="min-w-0 whitespace-normal break-words px-4 py-3 font-medium leading-6 text-gray-900">{request.title}</span>
+                <span className="min-w-0 truncate px-4 py-3 text-gray-600">{request.project?.name || "—"}</span>
+                <span className="min-w-0 px-4 py-3 text-gray-600">{request.type}</span>
+                <span className="flex min-w-0 items-center px-4 py-3">
+                  <InlineBadgeSelect
+                    value={request.status}
+                    options={statusOptions}
+                    className={statusStyles[request.status]}
+                    onChange={(value) => updateRequestField(request, "status", value as RequestStatus)}
+                  />
+                </span>
+                <span className="flex min-w-0 items-center px-4 py-3">
+                  <InlineBadgeSelect
+                    value={request.priority}
+                    options={priorityOptions}
+                    className={priorityStyles[request.priority]}
+                    onChange={(value) => updateRequestField(request, "priority", value as RequestPriority)}
+                  />
+                </span>
+                <span className="min-w-0 truncate px-4 py-3 text-gray-600">{request.reportedBy || "—"}</span>
+              </div>
             ))}
             {!visibleRequests.length && (
               <div className="px-4 py-10 text-center text-sm text-gray-400">No change or bug items found.</div>
@@ -282,6 +438,13 @@ export function WorkChangesPage() {
                       <Detail label="Priority" value={selectedRequest.priority} />
                       <Detail label="Project status" value={selectedRequest.project?.status || "—"} />
                     </div>
+                    <button
+                      onClick={handleConvertSingle}
+                      disabled={converting}
+                      className="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+                    >
+                      {converting ? "Creating..." : "Create Task"}
+                    </button>
                   </div>
                 ) : (
                   <div className="flex h-full items-center justify-center text-sm text-gray-400">Select an item.</div>
@@ -389,5 +552,39 @@ function SelectField({ label, value, onChange, options }: { label: string; value
         ))}
       </select>
     </label>
+  );
+}
+
+function InlineBadgeSelect({
+  value,
+  options,
+  className,
+  onChange,
+}: {
+  value: string;
+  options: string[];
+  className: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <select
+      value={value}
+      onClick={(event) => event.stopPropagation()}
+      onChange={(event) => {
+        event.stopPropagation();
+        onChange(event.target.value);
+      }}
+      className={cn(
+        "h-7 w-[108px] cursor-pointer appearance-none rounded-full border px-3 text-xs font-semibold outline-none transition-colors focus:ring-2 focus:ring-blue-500",
+        className
+      )}
+      aria-label={`Change ${value}`}
+    >
+      {options.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </select>
   );
 }

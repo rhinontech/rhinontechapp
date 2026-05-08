@@ -199,4 +199,41 @@ router.put("/requests/:id", async (req: AuthRequest, res: Response) => {
   }
 });
 
+router.post("/requests/convert-to-tasks", async (req: AuthRequest, res: Response) => {
+  try {
+    const { requestIds } = req.body;
+
+    if (!Array.isArray(requestIds) || requestIds.length === 0) {
+      res.status(400).json({ message: "requestIds array is required and must not be empty" });
+      return;
+    }
+
+    const requests = await ClientRequest.findAll({
+      where: { id: requestIds },
+    });
+
+    if (requests.length === 0) {
+      res.status(404).json({ message: "No requests found" });
+      return;
+    }
+
+    const createdTasks = await Promise.all(
+      requests.map((request) =>
+        Task.create({
+          title: request.title,
+          description: request.description || undefined,
+          projectId: request.projectId || undefined,
+          createdById: request.createdById,
+          status: "Pending",
+        })
+      )
+    );
+
+    res.status(201).json(createdTasks);
+  } catch (err) {
+    console.error("Failed to convert requests to tasks:", err);
+    res.status(500).json({ message: "Failed to convert requests to tasks" });
+  }
+});
+
 export default router;
