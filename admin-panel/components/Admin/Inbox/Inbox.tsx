@@ -440,9 +440,10 @@ export default function Inbox() {
                       {formatTime(message.sentAt)}
                     </span>
                   </div>
-                  <p className="whitespace-pre-wrap text-sm leading-6 text-stone-800">
-                    {message.body}
-                  </p>
+                  <div 
+                    className="text-sm leading-6 text-stone-800 [&>div]:!bg-transparent [&_p]:mb-2 [&_a]:text-blue-600 hover:[&_a]:underline"
+                    dangerouslySetInnerHTML={{ __html: message.body }}
+                  />
                 </article>
               ))}
             </div>
