@@ -1,5 +1,5 @@
-import { TasksPage } from "@/components/Admin/Work/TasksPage";
+import { WorkOverview } from "@/components/Admin/Work/WorkOverview";
 
 export default function WorkPage() {
-  return <TasksPage scope="My tasks" />;
+  return <WorkOverview />;
 }

@@ -12,6 +12,7 @@ import peopleRoutes from "./routes/people";
 import tasksRoutes from "./routes/tasks";
 import attendanceRoutes from "./routes/attendance";
 import dashboardRoutes from "./routes/dashboard";
+import workRoutes from "./routes/work";
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use("/people", peopleRoutes);
 app.use("/tasks", tasksRoutes);
 app.use("/attendance", attendanceRoutes);
 app.use("/dashboard", dashboardRoutes);
+app.use("/work", workRoutes);
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });

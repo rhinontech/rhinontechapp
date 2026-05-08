@@ -9,6 +9,7 @@ interface TaskAttributes {
   description?: string;
   assigneeId?: string;
   createdById: string;
+  projectId?: string;
   team?: string;
   dueDate?: Date;
   status: TaskStatus;
@@ -17,7 +18,7 @@ interface TaskAttributes {
 }
 
 interface TaskCreationAttributes
-  extends Optional<TaskAttributes, "id" | "description" | "assigneeId" | "team" | "dueDate" | "status"> {}
+  extends Optional<TaskAttributes, "id" | "description" | "assigneeId" | "projectId" | "team" | "dueDate" | "status"> {}
 
 export class Task
   extends Model<TaskAttributes, TaskCreationAttributes>
@@ -28,6 +29,7 @@ export class Task
   declare description?: string;
   declare assigneeId?: string;
   declare createdById: string;
+  declare projectId?: string;
   declare team?: string;
   declare dueDate?: Date;
   declare status: TaskStatus;
@@ -42,6 +44,7 @@ Task.init(
     description: { type: DataTypes.TEXT, allowNull: true },
     assigneeId: { type: DataTypes.UUID, allowNull: true },
     createdById: { type: DataTypes.UUID, allowNull: false },
+    projectId: { type: DataTypes.UUID, allowNull: true },
     team: { type: DataTypes.STRING, allowNull: true },
     dueDate: { type: DataTypes.DATEONLY, allowNull: true },
     status: { type: DataTypes.ENUM("Pending", "In progress", "Done"), defaultValue: "Pending" },

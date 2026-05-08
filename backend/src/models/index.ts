@@ -8,6 +8,8 @@ import { Payroll } from "./Payroll";
 import { Payslip } from "./Payslip";
 import { Task } from "./Task";
 import { Attendance } from "./Attendance";
+import { Project } from "./Project";
+import { ClientRequest } from "./ClientRequest";
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/database";
 
@@ -48,6 +50,16 @@ Task.belongsTo(User, { foreignKey: "createdById", as: "creator" });
 User.hasMany(Task, { foreignKey: "assigneeId", as: "assignedTasks" });
 User.hasMany(Task, { foreignKey: "createdById", as: "createdTasks" });
 
+// Work projects and client requests
+Project.belongsTo(User, { foreignKey: "createdById", as: "creator" });
+User.hasMany(Project, { foreignKey: "createdById", as: "createdProjects" });
+Task.belongsTo(Project, { foreignKey: "projectId", as: "project" });
+Project.hasMany(Task, { foreignKey: "projectId", as: "tasks" });
+ClientRequest.belongsTo(Project, { foreignKey: "projectId", as: "project" });
+Project.hasMany(ClientRequest, { foreignKey: "projectId", as: "clientRequests" });
+ClientRequest.belongsTo(User, { foreignKey: "createdById", as: "creator" });
+User.hasMany(ClientRequest, { foreignKey: "createdById", as: "createdClientRequests" });
+
 // Attendance
 Attendance.belongsTo(User, { foreignKey: "userId", as: "user" });
 User.hasMany(Attendance, { foreignKey: "userId", as: "attendance" });
@@ -59,6 +71,8 @@ export {
   Payroll, Payslip,
   Task,
   Attendance,
+  Project,
+  ClientRequest,
 };
 
 export async function syncDatabase(force = false) {

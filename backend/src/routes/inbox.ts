@@ -3,6 +3,7 @@ import { Op, WhereOptions } from "sequelize";
 import { InboxEmail } from "../models";
 import { InboxEmailFolder } from "../models/InboxEmail";
 import { authenticate, authorize, AuthRequest } from "../middleware/authenticate";
+import { sendEmail } from "../services/mailer";
 
 const router = Router();
 
@@ -70,11 +71,31 @@ router.post("/", authorize("inbox:write"), async (req: AuthRequest, res: Respons
   }
 
   const sentAt = new Date();
+  const threadKey = `thread-${sentAt.getTime()}`;
+  const fromEmail = req.user?.companyEmail || "admin@rhinontech.in";
+  const isDraft = folder === "drafts";
+
+  if (!isDraft) {
+    try {
+      await sendEmail({
+        to: toEmails,
+        cc: ccEmails,
+        from: fromEmail,
+        subject,
+        html: body,
+        text: body,
+      });
+    } catch (err) {
+      res.status(502).json({ message: err instanceof Error ? err.message : "Failed to deliver email" });
+      return;
+    }
+  }
+
   const email = await InboxEmail.create({
-    threadKey: `thread-${sentAt.getTime()}`,
-    folder: folder === "drafts" ? "drafts" : "sent",
+    threadKey,
+    folder: isDraft ? "drafts" : "sent",
     fromName: req.user?.fullName || "Rhinon",
-    fromEmail: req.user?.companyEmail || "admin@rhinontech.in",
+    fromEmail,
     toEmails,
     ccEmails,
     subject,
@@ -118,6 +139,20 @@ router.post("/:id/reply", authorize("inbox:write"), async (req: AuthRequest, res
     hasAttachment: false,
     sentAt: new Date(),
   });
+
+  try {
+    await sendEmail({
+      to: reply.toEmails,
+      from: reply.fromEmail,
+      subject: reply.subject,
+      html: reply.body,
+      text: reply.body,
+    });
+  } catch (err) {
+    await reply.destroy().catch(() => {});
+    res.status(502).json({ message: err instanceof Error ? err.message : "Failed to deliver reply" });
+    return;
+  }
 
   res.status(201).json(reply);
 });
