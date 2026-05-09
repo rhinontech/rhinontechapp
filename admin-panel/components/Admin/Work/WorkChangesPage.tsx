@@ -5,7 +5,7 @@ import { SubNavToggle } from "@/components/Admin/Common/CollapsibleSubNav/Collap
 import { useSideNav } from "@/context/SideNavContext";
 import { cn } from "@/lib/utils";
 import { apiFetch } from "@/lib/api";
-import { TbLayoutSidebarFilled, TbLayoutSidebarRightFilled, TbPlus, TbCheck } from "react-icons/tb";
+import { TbLayoutSidebarFilled, TbLayoutSidebarRightFilled, TbPlus, TbCheck, TbExternalLink } from "react-icons/tb";
 
 type RequestType = "Bug" | "Change request";
 type RequestStatus = "Open" | "In review" | "In progress" | "Done";
@@ -272,18 +272,32 @@ export function WorkChangesPage() {
 
         <div className="flex-1 overflow-auto p-4">
           <div className="flex flex-wrap items-center gap-3">
-            <select
-              value={projectFilter}
-              onChange={(event) => setProjectFilter(event.target.value)}
-              className="w-[220px] rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All projects</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center gap-2">
+              <select
+                value={projectFilter}
+                onChange={(event) => setProjectFilter(event.target.value)}
+                className="w-[220px] rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All projects</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+              {projectFilter !== "all" && (
+                <a
+                  href={`/p/${projectFilter}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  title="View Public Portal"
+                >
+                  <TbExternalLink size={16} />
+                  <span>Public View</span>
+                </a>
+              )}
+            </div>
             <select
               value={typeFilter}
               onChange={(event) => setTypeFilter(event.target.value as RequestType | "All")}

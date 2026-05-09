@@ -14,6 +14,7 @@ import attendanceRoutes from "./routes/attendance";
 import dashboardRoutes from "./routes/dashboard";
 import workRoutes from "./routes/work";
 import webhooksRoutes from "./routes/webhooks";
+import publicRoutes from "./routes/public";
 
 const app = express();
 
@@ -40,6 +41,9 @@ app.use("/work", workRoutes);
 
 // Use text parser for SNS webhooks since AWS SNS sends content-type text/plain
 app.use("/webhooks", express.text({ type: ["application/json", "text/plain"] }), webhooksRoutes);
+
+// Public unauthenticated routes
+app.use("/public", publicRoutes);
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });

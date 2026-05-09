@@ -17,6 +17,12 @@ export function proxy(request: NextRequest) {
 
   const isAuthRoute = pathname.startsWith("/auth/");
   const isOnboardRoute = pathname.startsWith("/onboard");
+  const isPublicPortal = pathname.startsWith("/p/");
+
+  // Public project portal — no auth required
+  if (isPublicPortal) {
+    return NextResponse.next();
+  }
 
   if (isOnboardRoute) {
     return NextResponse.next();
