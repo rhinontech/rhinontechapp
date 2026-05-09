@@ -5,7 +5,7 @@ import { SubNavToggle } from "@/components/Admin/Common/CollapsibleSubNav/Collap
 import { useSideNav } from "@/context/SideNavContext";
 import { cn } from "@/lib/utils";
 import { apiFetch } from "@/lib/api";
-import { TbLayoutSidebarFilled, TbLayoutSidebarRightFilled, TbPlus, TbSearch } from "react-icons/tb";
+import { TbLayoutSidebarFilled, TbLayoutSidebarRightFilled, TbPlus, TbSearch, TbExternalLink } from "react-icons/tb";
 
 type ProjectStatus = "Active" | "Paused" | "Completed" | "Pipeline";
 type PanelMode = "view" | "create" | "edit";
@@ -67,7 +67,7 @@ export function WorkProjectsPage() {
         fullName: employee.fullName,
         companyEmail: employee.companyEmail,
       }))))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const visibleProjects = useMemo(() => {
@@ -207,7 +207,7 @@ export function WorkProjectsPage() {
         </div>
       </main>
 
-      <aside className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl bg-white transition-all duration-200 ease-in-out ${isPreviewExpanded && (visibleProjects.length > 0 || mode === "create") ? "w-[36%]" : "w-0"}`}>
+      <aside className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl bg-white transition-all duration-200 ease-in-out ${isPreviewExpanded && (visibleProjects.length > 0 || mode === "create") ? "w-[50%]" : "w-0"}`}>
         {isPreviewExpanded && (visibleProjects.length > 0 || mode === "create") && (
           <div className="flex h-full flex-1 flex-col overflow-hidden">
             <div className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-white px-5">
@@ -240,6 +240,15 @@ export function WorkProjectsPage() {
                       <Detail label="Total tasks" value={String(selectedProject.taskCount)} />
                       <Detail label="Changes / bugs" value={String(selectedProject.requestCount)} />
                     </div>
+                    <a
+                      href={`/p/${selectedProject.id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex w-full items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100"
+                    >
+                      <TbExternalLink size={16} />
+                      Open Public Portal
+                    </a>
                   </div>
                 ) : (
                   <div className="flex h-full items-center justify-center text-sm text-gray-400">Select a project.</div>

@@ -318,10 +318,11 @@ export default function Inbox() {
             </p>
           )}
           {emails.map((email) => (
-            <button
+            <div
               key={email.id}
+              role="button"
               onClick={() => setSelectedId(email.id)}
-              className={`w-full border-b p-4 text-left hover:bg-stone-50 ${
+              className={`w-full border-b p-4 text-left hover:bg-stone-50 cursor-pointer transition-colors ${
                 selectedId === email.id ? "bg-blue-50" : "bg-white"
               }`}
             >
@@ -361,7 +362,7 @@ export default function Inbox() {
                 <span>{email.isRead ? "Read" : "Unread"}</span>
                 <span>{formatTime(email.sentAt)}</span>
               </div>
-            </button>
+            </div>
           ))}
         </div>
       </section>

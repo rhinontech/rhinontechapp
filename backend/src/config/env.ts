@@ -23,4 +23,6 @@ export const env = {
     token: process.env.GITHUB_TOKEN || "",
     org: process.env.GITHUB_ORG || "",
   },
+  geminiApiKey: process.env.GEMINI_API_KEY || "",
+  cronSecret: process.env.CRON_SECRET || "rhinon-cron-secret",
 };

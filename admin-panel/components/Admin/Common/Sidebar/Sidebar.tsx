@@ -8,7 +8,7 @@ import { MdDashboard, MdOutlineCloud } from "react-icons/md";
 import { FaUserGroup } from "react-icons/fa6";
 import { RiSettings3Fill } from "react-icons/ri";
 import { HiInbox } from "react-icons/hi2";
-import { TbBriefcase, TbCalendarTime, TbCash } from "react-icons/tb";
+import { TbBriefcase, TbCalendarTime, TbCash, TbSpeakerphone } from "react-icons/tb";
 import { BsPinAngleFill, BsPinAngle } from "react-icons/bs";
 import { cn } from "@/lib/utils";
 import { useDashboard } from "../../../Common/DashboardProvider/DashboardProvider";
@@ -29,6 +29,7 @@ export function Sidebar() {
       "payslips:read",
       "provisioning:read",
       "settings:read",
+      "outreach:read",
     ],
     hr: ["dashboard:read", "people:read", "payslips:read"],
     employee: ["dashboard:read", "people:read", "payslips:read"],
@@ -51,6 +52,7 @@ export function Sidebar() {
     { title: "Payroll",     icon: <TbCash size={20} className="h-5 w-5 flex-shrink-0" />,         href: `/${roleSlug}/payroll`,      permission: "payslips:read" },
     { title: "Work",        icon: <TbBriefcase size={20} className="h-5 w-5 flex-shrink-0" />,    href: `/${roleSlug}/work`,         permission: "dashboard:read" },
     { title: "Attendance",  icon: <TbCalendarTime size={20} className="h-5 w-5 flex-shrink-0" />, href: `/${roleSlug}/attendance`,   permission: "dashboard:read" },
+    { title: "Outreach",    icon: <TbSpeakerphone size={20} className="h-5 w-5 flex-shrink-0" />, href: `/${roleSlug}/outreach`,     permission: "outreach:read" },
     { title: "Provisioning",icon: <MdOutlineCloud size={20} className="h-5 w-5 flex-shrink-0" />, href: `/${roleSlug}/provisioning`, permission: "provisioning:read" },
     { title: "Settings",    icon: <RiSettings3Fill size={20} className="h-5 w-5 flex-shrink-0" />,href: `/${roleSlug}/settings`,     permission: "settings:read" },
   ].filter((item) => {

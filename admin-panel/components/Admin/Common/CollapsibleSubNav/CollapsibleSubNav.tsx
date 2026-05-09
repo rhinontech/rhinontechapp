@@ -22,14 +22,15 @@ interface CollapsibleSubNavProps {
 export function CollapsibleSubNav({ title, items }: CollapsibleSubNavProps) {
   const { isExpanded } = useSideNav();
   const pathname = usePathname();
+  const isCampaignDetailPage = pathname.includes("/outreach/campaigns/") && pathname.split("/").pop() !== "campaigns";
+  const showNav = isExpanded && !isCampaignDetailPage;
 
   return (
     <aside
-      className={`flex h-full flex-col bg-stone-100 rounded-l-xl transition-all duration-200 ease-in-out overflow-hidden ${
-        isExpanded ? "w-[20%] min-w-[180px] border-r" : "w-0"
-      }`}
+      className={`flex h-full flex-col bg-stone-100 rounded-l-xl transition-all duration-200 ease-in-out overflow-hidden ${showNav ? "w-[15%] min-w-[180px] border-r" : "w-0"
+        }`}
     >
-      {isExpanded && (
+      {showNav && (
         <div className="flex flex-col w-full flex-1">
           <div className="flex items-center w-full h-16 px-5 py-4 text-xl font-semibold tracking-tight border-b">
             {title}

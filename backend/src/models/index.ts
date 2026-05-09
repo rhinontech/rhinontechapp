@@ -10,6 +10,10 @@ import { Task } from "./Task";
 import { Attendance } from "./Attendance";
 import { Project } from "./Project";
 import { ClientRequest } from "./ClientRequest";
+import { Lead } from "./Lead";
+import { CampaignTemplate } from "./CampaignTemplate";
+import { Campaign } from "./Campaign";
+import { CampaignActivity } from "./CampaignActivity";
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/database";
 
@@ -64,6 +68,25 @@ User.hasMany(ClientRequest, { foreignKey: "createdById", as: "createdClientReque
 Attendance.belongsTo(User, { foreignKey: "userId", as: "user" });
 User.hasMany(Attendance, { foreignKey: "userId", as: "attendance" });
 
+// Outreach Associations
+Campaign.belongsTo(CampaignTemplate, { foreignKey: "templateId", as: "template" });
+CampaignTemplate.hasMany(Campaign, { foreignKey: "templateId", as: "campaigns" });
+
+Campaign.belongsTo(User, { foreignKey: "createdById", as: "creator" });
+User.hasMany(Campaign, { foreignKey: "createdById", as: "createdCampaigns" });
+
+CampaignTemplate.belongsTo(User, { foreignKey: "createdById", as: "creator" });
+User.hasMany(CampaignTemplate, { foreignKey: "createdById", as: "createdTemplates" });
+
+Lead.belongsTo(Campaign, { foreignKey: "campaignId", as: "campaign" });
+Campaign.hasMany(Lead, { foreignKey: "campaignId", as: "leads" });
+
+CampaignActivity.belongsTo(Lead, { foreignKey: "leadId", as: "lead" });
+Lead.hasMany(CampaignActivity, { foreignKey: "leadId", as: "activities" });
+
+CampaignActivity.belongsTo(Campaign, { foreignKey: "campaignId", as: "campaign" });
+Campaign.hasMany(CampaignActivity, { foreignKey: "campaignId", as: "activities" });
+
 export {
   Role, Permission, RolePermission,
   User,
@@ -73,6 +96,10 @@ export {
   Attendance,
   Project,
   ClientRequest,
+  Lead,
+  CampaignTemplate,
+  Campaign,
+  CampaignActivity,
 };
 
 export async function syncDatabase(force = false) {
