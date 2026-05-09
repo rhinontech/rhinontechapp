@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { 
-  TbMail, 
+import {
+  TbMail,
   TbLoader,
   TbSearch,
   TbBulb,
@@ -64,7 +64,7 @@ export function ManualOutreachPage() {
     fetchLeads();
   }, [fetchLeads]);
 
-  const filteredLeads = leads.filter(l => 
+  const filteredLeads = leads.filter(l =>
     l.name.toLowerCase().includes(search.toLowerCase()) ||
     l.company.toLowerCase().includes(search.toLowerCase())
   );
@@ -134,8 +134,8 @@ export function ManualOutreachPage() {
             <div className="p-4 border-b border-stone-100 bg-stone-50/50">
               <div className="relative max-w-sm">
                 <TbSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={16} />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="Find lead..."
                   value={search}
                   onChange={e => setSearch(e.target.value)}
@@ -149,7 +149,7 @@ export function ManualOutreachPage() {
               ) : filteredLeads.length === 0 ? (
                 <div className="p-10 text-center text-stone-400 text-sm italic">No leads found</div>
               ) : filteredLeads.map(lead => (
-                <button 
+                <button
                   key={lead.id}
                   onClick={() => { setSelectedLead(lead); setSent(false); setIsPreviewExpanded(true); }}
                   className={cn(
@@ -206,7 +206,7 @@ export function ManualOutreachPage() {
                         <p className="text-xs text-stone-500 font-medium mt-1">{selectedLead.email}</p>
                       </div>
                     </div>
-                    <button 
+                    <button
                       onClick={handleGenerateDraft}
                       disabled={generating}
                       className="flex items-center gap-2 text-indigo-600 font-bold hover:bg-indigo-50 px-3 py-1.5 rounded-lg transition-all border border-indigo-100 text-xs disabled:opacity-50"
@@ -219,19 +219,19 @@ export function ManualOutreachPage() {
                   <div className="flex-1 p-6 overflow-auto space-y-6">
                     <div>
                       <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Subject Line</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={composer.subject}
-                        onChange={e => setComposer({...composer, subject: e.target.value})}
+                        onChange={e => setComposer({ ...composer, subject: e.target.value })}
                         placeholder="e.g. Scaling operations at {{company}}"
                         className="w-full px-0 py-2 text-lg font-bold border-b border-stone-100 focus:border-blue-500 focus:outline-none placeholder:text-stone-200 transition-colors"
                       />
                     </div>
                     <div className="flex-1 flex flex-col">
                       <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Email Body</label>
-                      <textarea 
+                      <textarea
                         value={composer.body}
-                        onChange={e => setComposer({...composer, body: e.target.value})}
+                        onChange={e => setComposer({ ...composer, body: e.target.value })}
                         placeholder="Type your message here or generate an AI draft..."
                         className="flex-1 w-full p-0 text-stone-700 leading-relaxed focus:outline-none resize-none placeholder:text-stone-200 text-sm font-medium h-[300px]"
                       ></textarea>
@@ -242,7 +242,7 @@ export function ManualOutreachPage() {
                     <div className="text-[10px] text-stone-400 font-bold uppercase tracking-widest">
                       {composer.body.length > 0 && `~${Math.ceil(composer.body.length / 5)} words`}
                     </div>
-                    <button 
+                    <button
                       onClick={handleSend}
                       disabled={sending || !composer.body || !composer.subject}
                       className={cn(

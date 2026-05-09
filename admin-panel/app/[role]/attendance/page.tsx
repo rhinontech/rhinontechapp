@@ -1,5 +1,5 @@
-import { AttendanceOverview } from "@/components/Admin/Work/AttendanceOverview";
+import { AttendancePage } from "@/components/Admin/Attendance/AttendancePage";
 
-export default function AttendancePage() {
-  return <AttendanceOverview />;
+export default function page() {
+  return <AttendancePage />;
 }

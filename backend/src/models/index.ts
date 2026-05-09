@@ -14,6 +14,8 @@ import { Lead } from "./Lead";
 import { CampaignTemplate } from "./CampaignTemplate";
 import { Campaign } from "./Campaign";
 import { CampaignActivity } from "./CampaignActivity";
+import { AttendanceRequest } from "./AttendanceRequest";
+import { AttendancePolicy } from "./AttendancePolicy";
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/database";
 
@@ -68,6 +70,12 @@ User.hasMany(ClientRequest, { foreignKey: "createdById", as: "createdClientReque
 Attendance.belongsTo(User, { foreignKey: "userId", as: "user" });
 User.hasMany(Attendance, { foreignKey: "userId", as: "attendance" });
 
+AttendanceRequest.belongsTo(User, { foreignKey: "userId", as: "user" });
+User.hasMany(AttendanceRequest, { foreignKey: "userId", as: "requests" });
+AttendanceRequest.belongsTo(User, { foreignKey: "processedById", as: "processor" });
+
+AttendancePolicy.belongsTo(User, { foreignKey: "lastUpdatedById", as: "updater" });
+
 // Outreach Associations
 Campaign.belongsTo(CampaignTemplate, { foreignKey: "templateId", as: "template" });
 CampaignTemplate.hasMany(Campaign, { foreignKey: "templateId", as: "campaigns" });
@@ -100,6 +108,8 @@ export {
   CampaignTemplate,
   Campaign,
   CampaignActivity,
+  AttendanceRequest,
+  AttendancePolicy,
 };
 
 export async function syncDatabase(force = false) {

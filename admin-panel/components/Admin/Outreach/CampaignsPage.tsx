@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { 
-  TbTarget, 
-  TbPlus, 
+import {
+  TbTarget,
+  TbPlus,
   TbTargetArrow,
   TbLoader,
   TbX,
@@ -78,7 +78,7 @@ export function CampaignsPage() {
     try {
       const data = await apiFetch<Campaign[]>("/campaigns");
       setCampaigns(data);
-      
+
       // Auto-select campaign if ID is in search params
       const idParam = searchParams.get("id");
       if (idParam) {
@@ -169,7 +169,7 @@ export function CampaignsPage() {
             ) : campaigns.length === 0 ? (
               <div className="px-4 py-10 text-center text-sm text-gray-400">No campaigns yet.</div>
             ) : campaigns.map(campaign => (
-              <div 
+              <div
                 key={campaign.id}
                 onClick={() => { setSelectedCampaign(campaign); setShowAddPanel(false); setIsPreviewExpanded(true); }}
                 className={cn(
@@ -195,7 +195,7 @@ export function CampaignsPage() {
                       <span className="text-stone-900">{campaign.leadsProcessed} / {campaign.leadsTotal}</span>
                     </div>
                     <div className="w-full h-1 bg-stone-100 rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className="h-full bg-stone-900 transition-all duration-1000"
                         style={{ width: `${(campaign.leadsProcessed / (campaign.leadsTotal || 1)) * 100}%` }}
                       ></div>
@@ -235,7 +235,7 @@ export function CampaignsPage() {
 
                   <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
                     Template
-                    <select 
+                    <select
                       required
                       value={form.templateId}
                       onChange={e => setForm({ ...form, templateId: e.target.value })}
@@ -255,7 +255,7 @@ export function CampaignsPage() {
 
                   <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
                     Objective
-                    <textarea 
+                    <textarea
                       value={form.objective}
                       onChange={e => setForm({ ...form, objective: e.target.value })}
                       className="w-full px-3 py-2 rounded-lg border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 bg-white resize-none h-32 text-sm"
@@ -348,7 +348,7 @@ function FormInput({ label, value, onChange, required, type = "text", placeholde
   return (
     <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
       {label}
-      <input 
+      <input
         required={required}
         type={type}
         value={value}

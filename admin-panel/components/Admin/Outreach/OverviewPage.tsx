@@ -68,7 +68,7 @@ export function OverviewPage() {
   );
 
   return (
-    <div className="flex h-full min-h-0 gap-2 overflow-hidden bg-stone-50">
+    <div className="flex h-full min-h-0 gap-2 overflow-hidden">
       <main className={cn("flex h-full min-h-0 w-full flex-col overflow-hidden", isSubNavExpanded ? "rounded-r-xl" : "rounded-xl")}>
         <div className="flex h-16 items-center justify-between border-b px-4 bg-white">
           <div className="flex items-center gap-3">

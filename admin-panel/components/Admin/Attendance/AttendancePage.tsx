@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { SubNavToggle } from "@/components/Admin/Common/CollapsibleSubNav/CollapsibleSubNav";
-import { TbChevronLeft, TbChevronRight, TbDownload, TbPlus, TbStopwatch } from "react-icons/tb";
+import { TbChevronLeft, TbChevronRight, TbDownload, TbPlus, TbStopwatch, TbX } from "react-icons/tb";
 import { cn } from "@/lib/utils";
 import { useSideNav } from "@/context/SideNavContext";
 import { apiFetch } from "@/lib/api";
+import { usePathname } from "next/navigation";
 
 const attendanceTabs = ["Timesheet", "Regularization Requests", "Attendance Policies", "Other Policies", "Penalization Records", "Overtime Records"];
 
@@ -31,7 +32,7 @@ interface TodayStats {
 function AttendanceStatus({ value }: { value: string }) {
   const color =
     value === "P" ? "border-green-600 bg-green-100 text-green-700" :
-    "border-red-500 bg-red-50 text-red-600";
+      "border-red-500 bg-red-50 text-red-600";
   return (
     <span className={cn("inline-flex h-7 w-7 items-center justify-center rounded-full border text-sm font-semibold", color)}>
       {value}
@@ -70,6 +71,14 @@ function ordinalLabel(iso: string, isToday: boolean): string {
 
 export function AttendancePage() {
   const { isExpanded: isSubNavExpanded } = useSideNav();
+  const pathname = usePathname();
+  const roleSlug = pathname.split("/")[1];
+  const isSuperAdmin = roleSlug === "superadmin";
+
+  const tabs = isSuperAdmin
+    ? ["Timesheet", "Regularization Requests", "Attendance Policies", "Other Policies", "Penalization Records", "Overtime Records"]
+    : ["Timesheet", "Attendance Policies"];
+
   const [activeTab, setActiveTab] = useState("Timesheet");
   const hourColumns = Array.from({ length: 24 }, (_, i) => i);
 
@@ -90,7 +99,6 @@ export function AttendancePage() {
         apiFetch<AttendanceDay[]>(`/attendance?month=${month}&year=${year}`),
         apiFetch<TodayStats>("/attendance/today"),
       ]);
-      // Backend already caps at today; show today first then past days newest→oldest
       const todayStr = new Date().toISOString().split("T")[0];
       const todayEntry = monthDays.filter((d) => d.date === todayStr);
       const past = monthDays.filter((d) => d.date < todayStr).reverse();
@@ -102,6 +110,32 @@ export function AttendancePage() {
       setLoading(false);
     }
   }, [month, year]);
+
+  const [showRegModal, setShowRegModal] = useState(false);
+  const [regDate, setRegDate] = useState(new Date().toISOString().split('T')[0]);
+  const [regTime, setRegTime] = useState("");
+  const [regReason, setRegReason] = useState("");
+
+  const handleRegularize = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await apiFetch("/attendance/requests", {
+        method: "POST",
+        body: JSON.stringify({
+          type: "Regularization",
+          date: regDate,
+          requestedTime: regTime,
+          reason: regReason
+        })
+      });
+      setShowRegModal(false);
+      setRegTime("");
+      setRegReason("");
+      alert("Request submitted successfully.");
+    } catch (err) {
+      alert("Failed to submit request.");
+    }
+  };
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -142,11 +176,11 @@ export function AttendancePage() {
     <div className={cn("flex flex-col h-full bg-stone-50 overflow-hidden", isSubNavExpanded ? "rounded-r-xl" : "rounded-xl")}>
       <div className="flex h-16 items-center gap-2 border-b px-4">
         <SubNavToggle />
-        {attendanceTabs.map((tab) => (
+        {tabs.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={cn("rounded-lg px-3 py-1 text-sm font-medium text-gray-600", activeTab === tab && "bg-gray-100 text-gray-900")}
+            className={cn("rounded-lg px-3 py-1 text-sm font-medium text-gray-600 uppercase tracking-widest text-[10px] font-bold", activeTab === tab && "bg-gray-100 text-gray-900")}
           >
             {tab}
           </button>
@@ -178,7 +212,12 @@ export function AttendancePage() {
                   )}
                 </div>
                 <div className="flex items-center gap-3">
-                  <button className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50">Add regularisation</button>
+                  <button
+                    onClick={() => setShowRegModal(true)}
+                    className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
+                  >
+                    Add regularisation
+                  </button>
                   {today?.clockIn && !today?.clockOut ? (
                     <button
                       onClick={handleClockOut}
@@ -278,6 +317,58 @@ export function AttendancePage() {
           </div>
         )}
       </div>
+
+      {/* Regularization Modal */}
+      {showRegModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-6 border-b flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-stone-900">Request Regularization</h3>
+                <p className="text-[10px] text-stone-400 font-bold uppercase tracking-widest">Attendance Fix</p>
+              </div>
+              <button onClick={() => setShowRegModal(false)} className="p-2 rounded-xl hover:bg-stone-50 text-stone-400 hover:text-stone-900"><TbX size={20} /></button>
+            </div>
+            <form onSubmit={handleRegularize} className="p-6 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Date</label>
+                <input
+                  type="date"
+                  value={regDate}
+                  onChange={e => setRegDate(e.target.value)}
+                  className="w-full px-4 py-2 text-sm rounded-xl border border-stone-100 bg-stone-50 focus:ring-2 focus:ring-stone-900 outline-none"
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Corrected Time / Type</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 09:30 AM or Full Day"
+                  value={regTime}
+                  onChange={e => setRegTime(e.target.value)}
+                  className="w-full px-4 py-2 text-sm rounded-xl border border-stone-100 bg-stone-50 focus:ring-2 focus:ring-stone-900 outline-none"
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Reason</label>
+                <textarea
+                  placeholder="Why is this fix needed?"
+                  value={regReason}
+                  onChange={e => setRegReason(e.target.value)}
+                  className="w-full px-4 py-2 text-sm rounded-xl border border-stone-100 bg-stone-50 focus:ring-2 focus:ring-stone-900 outline-none h-24 resize-none"
+                  required
+                />
+              </div>
+              <div className="pt-4 flex gap-3">
+                <button type="submit" className="flex-1 py-3 bg-stone-900 text-white rounded-xl font-bold text-sm hover:bg-stone-800 transition-all shadow-lg active:scale-95">Submit Request</button>
+                <button type="button" onClick={() => setShowRegModal(false)} className="px-6 py-3 bg-stone-50 text-stone-400 rounded-xl font-bold text-sm hover:bg-stone-100 transition-all">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

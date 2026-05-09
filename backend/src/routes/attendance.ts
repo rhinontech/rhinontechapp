@@ -1,6 +1,6 @@
 import { Router, Response } from "express";
 import { Op } from "sequelize";
-import { Attendance, Role, User } from "../models";
+import { Attendance, AttendancePolicy, AttendanceRequest, Role, User } from "../models";
 import { authenticate, AuthRequest } from "../middleware/authenticate";
 
 const router = Router();
@@ -344,6 +344,127 @@ router.get("/stats", async (req: AuthRequest, res: Response) => {
     });
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch stats" });
+  }
+});
+
+// GET /attendance/logs
+// Unified log of all attendance records
+router.get("/logs", async (req: AuthRequest, res: Response) => {
+  try {
+    if (!canViewTeamAttendance(req)) {
+      res.status(403).json({ message: "Insufficient permissions" });
+      return;
+    }
+
+    const employees = await activeNonSuperadminUsers();
+    const records = await Attendance.findAll({
+      where: { userId: { [Op.in]: employees.map(e => e.id) } },
+      include: [{ model: User, as: "user", attributes: ["fullName", "department"] }],
+      order: [["date", "DESC"]],
+      limit: 100
+    });
+
+    res.json(records.map(r => ({
+      ...r.toJSON(),
+      userName: (r as any).user?.fullName,
+      department: (r as any).user?.department,
+      durationMinutes: durationMinutes(r.clockIn, r.clockOut),
+      overtimeMinutes: Math.max(0, durationMinutes(r.clockIn, r.clockOut) - 540), // Example: OT after 9 hours (540m)
+      penalties: [] // Placeholder for penalty logic
+    })));
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch logs" });
+  }
+});
+
+// GET /attendance/requests
+router.get("/requests", async (req: AuthRequest, res: Response) => {
+  try {
+    const where: any = {};
+    if (!canViewTeamAttendance(req)) {
+      where.userId = req.user!.userId;
+    }
+    const requests = await AttendanceRequest.findAll({
+      where,
+      include: [{ model: User, as: "user", attributes: ["fullName"] }],
+      order: [["createdAt", "DESC"]]
+    });
+    res.json(requests.map(r => ({
+      ...r.toJSON(),
+      userName: (r as any).user?.fullName
+    })));
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch requests" });
+  }
+});
+
+// POST /attendance/requests
+router.post("/requests", async (req: AuthRequest, res: Response) => {
+  try {
+    const { type, date, reason, requestedTime } = req.body;
+    const request = await AttendanceRequest.create({
+      userId: req.user!.userId,
+      type,
+      date,
+      reason,
+      requestedTime
+    });
+    res.json(request);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to create request" });
+  }
+});
+
+// PUT /attendance/requests/:id
+router.put("/requests/:id", async (req: AuthRequest, res: Response) => {
+  try {
+    if (!canViewTeamAttendance(req)) {
+      res.status(403).json({ message: "Insufficient permissions" });
+      return;
+    }
+    const { status } = req.body;
+    const request = await AttendanceRequest.findByPk(req.params.id);
+    if (!request) {
+      res.status(404).json({ message: "Request not found" });
+      return;
+    }
+    await request.update({ status, processedById: req.user!.userId });
+    res.json(request);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update request" });
+  }
+});
+
+// GET /attendance/policies
+router.get("/policies", async (req: AuthRequest, res: Response) => {
+  try {
+    const policies = await AttendancePolicy.findAll({
+      order: [["title", "ASC"]]
+    });
+    res.json(policies);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch policies" });
+  }
+});
+
+// POST /attendance/policies
+router.post("/policies", async (req: AuthRequest, res: Response) => {
+  try {
+    if (!canViewTeamAttendance(req)) {
+      res.status(403).json({ message: "Insufficient permissions" });
+      return;
+    }
+    const { title, category, content, version } = req.body;
+    const policy = await AttendancePolicy.create({
+      title,
+      category,
+      content,
+      version,
+      lastUpdatedById: req.user!.userId
+    });
+    res.json(policy);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to create policy" });
   }
 });
 

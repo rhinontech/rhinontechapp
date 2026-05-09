@@ -18,7 +18,6 @@ function WorkLayoutContent({ children }: { children: React.ReactNode }) {
     { label: "Team tasks", href: `${base}/team`, icon: <TbUsers size={18} /> },
     { label: "All tasks", href: `${base}/all`, icon: <TbWorld size={18} /> },
     { label: "Changes & Bugs", href: `${base}/changes`, icon: <TbLayoutKanban size={18} /> },
-    { label: "Attendance", href: `${base}/attendance`, icon: <TbCalendarStats size={18} /> },
   ];
 
   return (

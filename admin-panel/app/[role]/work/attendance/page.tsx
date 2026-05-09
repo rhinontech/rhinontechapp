@@ -1,4 +1,5 @@
-import { AttendancePage } from "@/components/Admin/Work/AttendancePage";
+import { AttendancePage } from "@/components/Admin/Attendance/AttendancePage";
+
 
 export default function WorkAttendancePage() {
   return <AttendancePage />;

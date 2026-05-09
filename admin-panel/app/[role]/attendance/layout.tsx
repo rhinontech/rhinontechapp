@@ -4,7 +4,7 @@ import { AdminDashboardShell } from "@/components/Admin/Common/AdminDashboardShe
 import { CollapsibleSubNav } from "@/components/Admin/Common/CollapsibleSubNav/CollapsibleSubNav";
 import { SideNavProvider } from "@/context/SideNavContext";
 import { usePathname } from "next/navigation";
-import { TbCalendarStats, TbLayoutDashboard } from "react-icons/tb";
+import { TbCalendarStats, TbLayoutDashboard, TbTarget, TbUsers } from "react-icons/tb";
 
 function AttendanceLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -14,8 +14,12 @@ function AttendanceLayoutContent({ children }: { children: React.ReactNode }) {
   const items = [
     { label: "Overview", href: base, icon: <TbLayoutDashboard size={18} />, exact: true },
     ...(roleSlug === "superadmin"
-      ? []
-      : [{ label: "My Attendance", href: `${base}/my`, icon: <TbCalendarStats size={18} /> }]),
+      ? [
+          { label: "Logs", href: `${base}/logs`, icon: <TbCalendarStats size={18} /> },
+          { label: "Approvals", href: `${base}/approvals`, icon: <TbUsers size={18} /> },
+        ]
+      : []),
+    { label: "Governance", href: `${base}/governance`, icon: <TbTarget size={18} /> },
   ];
 
   return (
