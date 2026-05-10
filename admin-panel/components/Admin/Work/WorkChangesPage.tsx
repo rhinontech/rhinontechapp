@@ -247,7 +247,7 @@ export function WorkChangesPage() {
   };
 
   return (
-    <div className="flex h-full min-h-0 gap-2 overflow-hidden">
+    <div className="flex h-full min-h-0 overflow-hidden">
       <main className={cn("flex h-full min-h-0 w-full flex-col overflow-hidden bg-stone-50", isSubNavExpanded ? "rounded-r-xl" : "rounded-xl")}>
         <div className="flex h-16 items-center justify-between border-b px-4">
           <div className="flex items-center gap-3">
@@ -417,7 +417,7 @@ export function WorkChangesPage() {
         </div>
       </main>
 
-      <aside className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl bg-white transition-all duration-200 ease-in-out ${isPreviewExpanded && (visibleRequests.length > 0 || mode === "create") ? "w-[50%]" : "w-0"}`}>
+      <aside className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl bg-white transition-all duration-200 ease-in-out ${isPreviewExpanded && (visibleRequests.length > 0 || mode === "create") ? "w-[50%] ml-2" : "w-0"}`}>
         {isPreviewExpanded && (visibleRequests.length > 0 || mode === "create") && (
           <div className="flex h-full flex-1 flex-col overflow-hidden">
             <div className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-white px-5">

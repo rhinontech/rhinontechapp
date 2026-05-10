@@ -124,7 +124,7 @@ export function CampaignDetailPage({ id }: { id: string }) {
   );
 
   return (
-    <div className="flex h-full min-h-0 gap-2 overflow-hidden">
+    <div className="flex h-full min-h-0 overflow-hidden">
       <main className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-xl bg-stone-50 border">
         <div className="flex h-16 items-center justify-between border-b px-4 bg-white">
           <div className="flex items-center gap-3">
@@ -273,7 +273,7 @@ export function CampaignDetailPage({ id }: { id: string }) {
       </main>
 
       {/* Aside Panel */}
-      <aside className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl bg-white transition-all duration-200 ease-in-out ${isPreviewExpanded ? "w-[30%]" : "w-0"}`}>
+      <aside className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl bg-white transition-all duration-200 ease-in-out ${isPreviewExpanded ? "w-[30%] ml-2" : "w-0"}`}>
         {isPreviewExpanded && (
           <div className="flex h-full flex-1 flex-col overflow-hidden">
             <div className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-white px-5">

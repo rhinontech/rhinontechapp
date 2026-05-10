@@ -68,7 +68,7 @@ export function OverviewPage() {
   );
 
   return (
-    <div className="flex h-full min-h-0 gap-2 overflow-hidden">
+    <div className="flex h-full min-h-0 overflow-hidden">
       <main className={cn("flex h-full min-h-0 w-full flex-col overflow-hidden", isSubNavExpanded ? "rounded-r-xl" : "rounded-xl")}>
         <div className="flex h-16 items-center justify-between border-b px-4 bg-white">
           <div className="flex items-center gap-3">
@@ -80,7 +80,7 @@ export function OverviewPage() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-auto p-8 space-y-8">
+        <div className="flex-1 overflow-auto p-8 space-y-8 bg-white">
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <StatCard label="Total Leads" value={stats?.totalLeads} icon={<TbUsers />} trend="+12% from last month" trendUp />
@@ -91,7 +91,7 @@ export function OverviewPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Recent Activity */}
-            <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden flex flex-col">
+            <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden flex flex-col">
               <div className="p-5 border-b border-stone-100 flex items-center justify-between">
                 <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider flex items-center gap-2">
                   <TbActivity className="text-stone-400" /> Recent Activity
@@ -119,7 +119,7 @@ export function OverviewPage() {
             </div>
 
             {/* Performance Chart Placeholder */}
-            <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 flex flex-col items-center justify-center text-center">
+            <div className="bg-white rounded-2xl border border-stone-200 p-6 flex flex-col items-center justify-center text-center">
               <TbTrendingUp size={64} className="text-stone-100 mb-4" />
               <h3 className="text-lg font-bold text-stone-800">Conversion Analytics</h3>
               <p className="text-sm text-stone-400 max-w-xs mt-2">Visualizing your reply rates and conversion funnel across campaigns.</p>
@@ -141,7 +141,7 @@ export function OverviewPage() {
 
 function StatCard({ label, value, icon, trend, trendUp }: { label: string; value?: number; icon: React.ReactNode; trend?: string; trendUp?: boolean }) {
   return (
-    <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
+    <div className="bg-white p-6 rounded-2xl border border-stone-200">
       <div className="flex items-center justify-between mb-4">
         <div className="p-2.5 bg-stone-50 text-stone-900 rounded-xl text-xl">
           {icon}

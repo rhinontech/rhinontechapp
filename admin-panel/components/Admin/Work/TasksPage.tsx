@@ -142,10 +142,10 @@ export function TasksPage({ scope }: { scope: TaskScope }) {
   }, [fetchTasks]);
 
   useEffect(() => {
-    apiFetch<ProjectOption[]>("/work/projects").then(setProjects).catch(() => {});
+    apiFetch<ProjectOption[]>("/work/projects").then(setProjects).catch(() => { });
     apiFetch<EmployeeOption[]>("/people")
       .then((data) => setEmployees(data.map((employee) => ({ id: employee.id, fullName: employee.fullName, companyEmail: employee.companyEmail }))))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const visibleTasks = useMemo(() => {
@@ -275,7 +275,7 @@ export function TasksPage({ scope }: { scope: TaskScope }) {
   };
 
   return (
-    <div className="flex h-full min-h-0 gap-2 overflow-hidden">
+    <div className="flex h-full min-h-0 overflow-hidden">
       <main className={cn("flex h-full min-h-0 w-full flex-col overflow-hidden bg-stone-50", isSubNavExpanded ? "rounded-r-xl" : "rounded-xl")}>
         <div className="flex h-16 items-center justify-between border-b px-4 shrink-0 bg-white">
           <div className="flex items-center gap-2">
@@ -409,8 +409,8 @@ export function TasksPage({ scope }: { scope: TaskScope }) {
                             task.status === "Done"
                               ? "bg-emerald-50 text-emerald-600 border-emerald-100"
                               : task.status === "In progress"
-                              ? "bg-blue-50 text-blue-600 border-blue-100"
-                              : "bg-gray-50 text-gray-600 border-gray-100"
+                                ? "bg-blue-50 text-blue-600 border-blue-100"
+                                : "bg-gray-50 text-gray-600 border-gray-100"
                           )}
                         >
                           <option value="Pending">Pending</option>
@@ -478,7 +478,7 @@ export function TasksPage({ scope }: { scope: TaskScope }) {
                               <TbTrash size={16} />
                             </button>
                           </div>
-                          
+
                           <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
                             <span className="truncate max-w-[120px] font-medium text-stone-500">
                               {task.projectName || "Internal"}
@@ -504,9 +504,8 @@ export function TasksPage({ scope }: { scope: TaskScope }) {
       </main>
 
       <aside
-        className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl bg-white shadow-sm border border-gray-100 transition-all duration-300 ease-in-out ${
-          isPreviewExpanded && (visibleTasks.length > 0 || mode === "create") ? "w-[400px] shrink-0" : "w-0"
-        }`}
+        className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl transition-all duration-300 ease-in-out ${isPreviewExpanded && (visibleTasks.length > 0 || mode === "create") ? "w-[400px] shrink-0 ml-2" : "w-0"
+          }`}
       >
         {isPreviewExpanded && (visibleTasks.length > 0 || mode === "create") && (
           <div className="flex h-full w-[400px] flex-col overflow-hidden">
@@ -539,7 +538,7 @@ export function TasksPage({ scope }: { scope: TaskScope }) {
                         {selectedTask.description || "No description provided."}
                       </p>
                     </div>
-                    
+
                     <div className="h-px w-full bg-gray-100"></div>
 
                     <div className="grid grid-cols-2 gap-x-4 gap-y-6 text-sm">
@@ -556,7 +555,7 @@ export function TasksPage({ scope }: { scope: TaskScope }) {
               </div>
             ) : (
               <form onSubmit={saveTask} className="flex h-full flex-col">
-                <div className="flex-1 space-y-5 overflow-auto p-6">
+                <div className="flex-1 space-y-5 overflow-auto p-6 bg-stone-50">
                   <FormInput label="Task Title" value={form.title} onChange={(value) => setForm((current) => ({ ...current, title: value }))} required />
                   <label className="flex flex-col gap-1.5 text-sm font-semibold text-gray-700">
                     Description
@@ -624,7 +623,7 @@ export function TasksPage({ scope }: { scope: TaskScope }) {
                     </label>
                   </div>
                 </div>
-                <div className="flex items-center justify-end gap-3 border-t bg-gray-50/50 p-5 shrink-0">
+                <div className="flex items-center justify-end gap-3 border-t bg-stone-50 p-5 shrink-0">
                   <button type="button" onClick={() => setMode("view")} className="rounded-lg px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-200 transition-colors">
                     Cancel
                   </button>

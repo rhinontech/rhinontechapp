@@ -63,8 +63,8 @@ export function AttendanceLogsPage() {
   );
 
   return (
-    <div className="flex h-full min-h-0 gap-2 overflow-hidden">
-      <main className={cn("flex h-full min-h-0 w-full flex-col overflow-hidden bg-white shadow-sm border-r", isSubNavExpanded ? "rounded-r-xl" : "rounded-xl")}>
+    <div className="flex h-full min-h-0 overflow-hidden">
+      <main className={cn("flex h-full min-h-0 w-full flex-col overflow-hidden shadow-sm border-r", isSubNavExpanded ? "rounded-r-xl" : "rounded-xl")}>
         <div className="flex h-16 items-center justify-between border-b px-4 bg-white">
           <div className="flex items-center gap-3">
             <SubNavToggle />
@@ -85,7 +85,7 @@ export function AttendanceLogsPage() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-auto p-4 flex flex-col gap-4">
+        <div className="flex-1 overflow-auto p-4 flex flex-col gap-4 bg-white">
           <div className="flex items-center gap-3">
             <div className="relative flex-1">
               <TbSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={16} />
@@ -102,7 +102,7 @@ export function AttendanceLogsPage() {
             </button>
           </div>
 
-          <div className="overflow-auto rounded-xl border border-stone-100 shadow-sm">
+          <div className="overflow-auto rounded-xl border border-stone-200">
             <div className="grid grid-cols-[1.5fr_1fr_1fr_1fr_40px] bg-stone-50/50 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-gray-400 border-b">
               <span>Employee</span>
               <span>In/Out</span>
@@ -152,8 +152,8 @@ export function AttendanceLogsPage() {
 
       {/* Aside Panel */}
       <aside className={cn(
-        "flex h-full min-h-0 flex-col overflow-hidden bg-white shadow-sm border-l transition-all duration-300 ease-in-out rounded-xl",
-        isPreviewExpanded && selectedLog ? "w-[400px] opacity-100" : "w-0 opacity-0"
+        "flex h-full min-h-0 flex-col overflow-hidden bg-white border-l transition-all duration-300 ease-in-out rounded-xl",
+        isPreviewExpanded && selectedLog ? "w-[400px] opacity-100 ml-1.5" : "w-0 opacity-0"
       )}>
         {selectedLog && (
           <div className="flex h-full flex-col">

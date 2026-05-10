@@ -73,8 +73,8 @@ export function GovernancePage() {
   };
 
   return (
-    <div className="flex h-full min-h-0 gap-2 overflow-hidden">
-      <main className={cn("flex h-full min-h-0 w-full flex-col overflow-hidden bg-white shadow-sm border-r", isSubNavExpanded ? "rounded-r-xl" : "rounded-xl")}>
+    <div className="flex h-full min-h-0 overflow-hidden">
+      <main className={cn("flex h-full min-h-0 w-full flex-col overflow-hidden bg-white", isSubNavExpanded ? "rounded-r-xl" : "rounded-xl")}>
         <div className="flex h-16 items-center justify-between border-b px-4 bg-white">
           <div className="flex items-center gap-3">
             <SubNavToggle />
@@ -85,7 +85,7 @@ export function GovernancePage() {
           </div>
           <div className="flex items-center gap-2">
             {isSuperAdmin && (
-              <button 
+              <button
                 onClick={() => {
                   setSelectedPolicy({
                     id: "new",
@@ -154,8 +154,8 @@ export function GovernancePage() {
 
       {/* Aside Panel */}
       <aside className={cn(
-        "flex h-full min-h-0 flex-col overflow-hidden bg-white shadow-sm border-l transition-all duration-300 ease-in-out rounded-xl",
-        isPreviewExpanded && selectedPolicy ? "w-[50%] opacity-100" : "w-0 opacity-0"
+        "flex h-full min-h-0 flex-col overflow-hidden bg-white border-l transition-all duration-300 ease-in-out rounded-xl",
+        isPreviewExpanded && selectedPolicy ? "w-[50%] ml-1.5" : "w-0"
       )}>
         {selectedPolicy && (
           <div className="flex h-full flex-col">

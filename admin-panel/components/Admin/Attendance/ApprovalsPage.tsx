@@ -74,8 +74,8 @@ export function ApprovalsPage() {
   };
 
   return (
-    <div className="flex h-full min-h-0 gap-2 overflow-hidden">
-      <main className={cn("flex h-full min-h-0 w-full flex-col overflow-hidden bg-white shadow-sm border-r", isSubNavExpanded ? "rounded-r-xl" : "rounded-xl")}>
+    <div className="flex h-full min-h-0 overflow-hidden">
+      <main className={cn("flex h-full min-h-0 w-full flex-col overflow-hidden bg-white border-r", isSubNavExpanded ? "rounded-r-xl" : "rounded-xl")}>
         <div className="flex h-16 items-center justify-between border-b px-4 bg-white">
           <div className="flex items-center gap-3">
             <SubNavToggle />
@@ -133,8 +133,8 @@ export function ApprovalsPage() {
 
       {/* Aside Panel */}
       <aside className={cn(
-        "flex h-full min-h-0 flex-col overflow-hidden bg-white shadow-sm border-l transition-all duration-300 ease-in-out rounded-xl",
-        isPreviewExpanded && selectedRequest ? "w-[400px] opacity-100" : "w-0 opacity-0"
+        "flex h-full min-h-0 flex-col overflow-hidden bg-white border-l transition-all duration-300 ease-in-out rounded-xl",
+        isPreviewExpanded && selectedRequest ? "w-[400px] ml-1.5" : "w-0"
       )}>
         {selectedRequest && (
           <div className="flex h-full flex-col">
