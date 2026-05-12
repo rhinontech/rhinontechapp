@@ -18,6 +18,9 @@ import publicRoutes from "./routes/public";
 import leadsRoutes from "./routes/leads";
 import campaignsRoutes from "./routes/campaigns";
 import outreachRoutes from "./routes/outreach";
+import leaveRoutes from "./routes/leave";
+import performanceRoutes from "./routes/performance";
+import documentsRoutes from "./routes/documents";
 
 const app = express();
 
@@ -44,6 +47,9 @@ app.use("/work", workRoutes);
 app.use("/leads", leadsRoutes);
 app.use("/campaigns", campaignsRoutes);
 app.use("/outreach", outreachRoutes);
+app.use("/leave", leaveRoutes);
+app.use("/performance", performanceRoutes);
+app.use("/documents", documentsRoutes);
 
 // Use text parser for SNS webhooks since AWS SNS sends content-type text/plain
 app.use("/webhooks", express.text({ type: ["application/json", "text/plain"] }), webhooksRoutes);

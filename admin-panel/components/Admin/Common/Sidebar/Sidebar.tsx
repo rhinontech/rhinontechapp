@@ -8,7 +8,7 @@ import { MdDashboard, MdOutlineCloud } from "react-icons/md";
 import { FaUserGroup } from "react-icons/fa6";
 import { RiSettings3Fill } from "react-icons/ri";
 import { HiInbox } from "react-icons/hi2";
-import { TbBriefcase, TbCalendarTime, TbCash, TbSpeakerphone } from "react-icons/tb";
+import { TbBriefcase, TbCalendarTime, TbCash, TbSpeakerphone, TbCalendarOff, TbChartBar, TbFiles } from "react-icons/tb";
 import { BsPinAngleFill, BsPinAngle } from "react-icons/bs";
 import { cn } from "@/lib/utils";
 import { useDashboard } from "../../../Common/DashboardProvider/DashboardProvider";
@@ -30,9 +30,12 @@ export function Sidebar() {
       "provisioning:read",
       "settings:read",
       "outreach:read",
+      "leave:read",
+      "performance:read",
+      "documents:read",
     ],
-    hr: ["dashboard:read", "people:read", "payslips:read"],
-    employee: ["dashboard:read", "people:read", "payslips:read"],
+    hr: ["dashboard:read", "people:read", "payslips:read", "leave:read", "performance:read", "documents:read"],
+    employee: ["dashboard:read", "people:read", "payslips:read", "leave:read", "performance:read", "documents:read"],
   };
 
   useEffect(() => {
@@ -51,12 +54,16 @@ export function Sidebar() {
     { title: "Team",        icon: <FaUserGroup size={20} className="h-5 w-5 flex-shrink-0" />,    href: `/${roleSlug}/employees`,    permission: "people:read" },
     { title: "Payroll",     icon: <TbCash size={20} className="h-5 w-5 flex-shrink-0" />,         href: `/${roleSlug}/payroll`,      permission: "payslips:read" },
     { title: "Work",        icon: <TbBriefcase size={20} className="h-5 w-5 flex-shrink-0" />,    href: `/${roleSlug}/work`,         permission: "dashboard:read" },
-    { title: "Attendance",  icon: <TbCalendarTime size={20} className="h-5 w-5 flex-shrink-0" />, href: `/${roleSlug}/attendance`,   permission: "dashboard:read" },
-    { title: "Outreach",    icon: <TbSpeakerphone size={20} className="h-5 w-5 flex-shrink-0" />, href: `/${roleSlug}/outreach`,     permission: "outreach:read" },
-    { title: "Provisioning",icon: <MdOutlineCloud size={20} className="h-5 w-5 flex-shrink-0" />, href: `/${roleSlug}/provisioning`, permission: "provisioning:read" },
-    { title: "Settings",    icon: <RiSettings3Fill size={20} className="h-5 w-5 flex-shrink-0" />,href: `/${roleSlug}/settings`,     permission: "settings:read" },
+    { title: "Attendance",   icon: <TbCalendarTime size={20} className="h-5 w-5 flex-shrink-0" />, href: `/${roleSlug}/attendance`,   permission: "dashboard:read" },
+    { title: "Leave",        icon: <TbCalendarOff  size={20} className="h-5 w-5 flex-shrink-0" />, href: `/${roleSlug}/leave`,        permission: "leave:read" },
+    { title: "Performance",  icon: <TbChartBar     size={20} className="h-5 w-5 flex-shrink-0" />, href: `/${roleSlug}/performance`,  permission: "performance:read" },
+    { title: "Documents",    icon: <TbFiles        size={20} className="h-5 w-5 flex-shrink-0" />, href: `/${roleSlug}/documents`,    permission: "documents:read" },
+    { title: "Outreach",     icon: <TbSpeakerphone size={20} className="h-5 w-5 flex-shrink-0" />, href: `/${roleSlug}/outreach`,     permission: "outreach:read" },
+    { title: "Provisioning", icon: <MdOutlineCloud size={20} className="h-5 w-5 flex-shrink-0" />, href: `/${roleSlug}/provisioning`, permission: "provisioning:read" },
+    { title: "Settings",     icon: <RiSettings3Fill size={20} className="h-5 w-5 flex-shrink-0" />,href: `/${roleSlug}/settings`,     permission: "settings:read" },
   ].filter((item) => {
-    if (!permissions.includes(item.permission)) return false;
+    const alwaysVisible = ["leave:read", "performance:read", "documents:read"];
+    if (!alwaysVisible.includes(item.permission) && !permissions.includes(item.permission)) return false;
     const rolePermissions = previewPermissions[roleSlug];
     return rolePermissions ? rolePermissions.includes(item.permission) : true;
   });

@@ -16,6 +16,13 @@ import { Campaign } from "./Campaign";
 import { CampaignActivity } from "./CampaignActivity";
 import { AttendanceRequest } from "./AttendanceRequest";
 import { AttendancePolicy } from "./AttendancePolicy";
+import { LeaveType } from "./LeaveType";
+import { LeaveBalance } from "./LeaveBalance";
+import { LeaveRequest } from "./LeaveRequest";
+import { ReviewCycle } from "./ReviewCycle";
+import { ReviewGoal } from "./ReviewGoal";
+import { ReviewSubmission } from "./ReviewSubmission";
+import { Document } from "./Document";
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/database";
 
@@ -76,6 +83,38 @@ AttendanceRequest.belongsTo(User, { foreignKey: "processedById", as: "processor"
 
 AttendancePolicy.belongsTo(User, { foreignKey: "lastUpdatedById", as: "updater" });
 
+// Leave Associations
+LeaveType.hasMany(LeaveBalance, { foreignKey: "leaveTypeId", as: "balances" });
+LeaveBalance.belongsTo(LeaveType, { foreignKey: "leaveTypeId", as: "leaveType" });
+LeaveBalance.belongsTo(User, { foreignKey: "userId", as: "user" });
+User.hasMany(LeaveBalance, { foreignKey: "userId", as: "leaveBalances" });
+LeaveRequest.belongsTo(User, { foreignKey: "userId", as: "user" });
+LeaveRequest.belongsTo(User, { foreignKey: "processedById", as: "processor" });
+LeaveRequest.belongsTo(LeaveType, { foreignKey: "leaveTypeId", as: "leaveType" });
+User.hasMany(LeaveRequest, { foreignKey: "userId", as: "leaveRequests" });
+
+// Performance Associations
+ReviewCycle.belongsTo(User, { foreignKey: "createdById", as: "creator" });
+User.hasMany(ReviewCycle, { foreignKey: "createdById", as: "createdCycles" });
+
+ReviewGoal.belongsTo(User, { foreignKey: "userId", as: "user" });
+ReviewGoal.belongsTo(ReviewCycle, { foreignKey: "cycleId", as: "cycle" });
+ReviewGoal.belongsTo(User, { foreignKey: "createdById", as: "creator" });
+User.hasMany(ReviewGoal, { foreignKey: "userId", as: "goals" });
+ReviewCycle.hasMany(ReviewGoal, { foreignKey: "cycleId", as: "goals" });
+
+ReviewSubmission.belongsTo(ReviewCycle, { foreignKey: "cycleId", as: "cycle" });
+ReviewSubmission.belongsTo(User, { foreignKey: "revieweeId", as: "reviewee" });
+ReviewSubmission.belongsTo(User, { foreignKey: "reviewerId", as: "reviewer" });
+ReviewCycle.hasMany(ReviewSubmission, { foreignKey: "cycleId", as: "submissions" });
+User.hasMany(ReviewSubmission, { foreignKey: "revieweeId", as: "reviewsReceived" });
+User.hasMany(ReviewSubmission, { foreignKey: "reviewerId", as: "reviewsGiven" });
+
+// Document Associations
+Document.belongsTo(User, { foreignKey: "employeeId", as: "employee" });
+Document.belongsTo(User, { foreignKey: "uploadedById", as: "uploader" });
+User.hasMany(Document, { foreignKey: "employeeId", as: "documents" });
+
 // Outreach Associations
 Campaign.belongsTo(CampaignTemplate, { foreignKey: "templateId", as: "template" });
 CampaignTemplate.hasMany(Campaign, { foreignKey: "templateId", as: "campaigns" });
@@ -110,6 +149,13 @@ export {
   CampaignActivity,
   AttendanceRequest,
   AttendancePolicy,
+  LeaveType,
+  LeaveBalance,
+  LeaveRequest,
+  ReviewCycle,
+  ReviewGoal,
+  ReviewSubmission,
+  Document,
 };
 
 export async function syncDatabase(force = false) {
