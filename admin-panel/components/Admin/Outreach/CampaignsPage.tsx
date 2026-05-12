@@ -214,11 +214,11 @@ export function CampaignsPage() {
       </main>
 
       {/* Aside Panel */}
-      <aside className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl bg-white transition-all duration-200 ease-in-out ${isPreviewExpanded && (campaigns.length > 0 || showAddPanel || selectedCampaign) ? "w-[50%] ml-2" : "w-0"}`}>
+      <aside className={`flex min-h-0 h-full flex-col bg-white rounded-xl overflow-hidden transition-all duration-200 ease-in-out ${isPreviewExpanded && (campaigns.length > 0 || showAddPanel || selectedCampaign) ? "w-[42%] ml-2" : "w-0"}`}>
         {isPreviewExpanded && (campaigns.length > 0 || showAddPanel || selectedCampaign) && (
           <div className="flex h-full flex-1 flex-col overflow-hidden">
             <div className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-white px-5">
-              <p className="-mb-px flex self-stretch items-center border-b-2 border-blue-600 text-sm font-semibold text-gray-900">
+              <p className="-mb-px flex self-stretch items-center border-b-2 border-blue-600 text-md font-medium tracking-tight text-black">
                 {showAddPanel ? "New Campaign" : "Campaign Status"}
               </p>
               <div className="flex items-center gap-2">
@@ -287,30 +287,30 @@ export function CampaignsPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="rounded-xl border border-stone-100 p-4 bg-stone-50/50">
-                      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Processed</p>
-                      <p className="text-xl font-bold text-stone-900">{selectedCampaign.leadsProcessed} / {selectedCampaign.leadsTotal}</p>
+                    <div className="rounded-lg border border-gray-100 p-3">
+                      <p className="text-xs text-gray-400 mb-1">Processed</p>
+                      <p className="text-xl font-semibold text-gray-900">{selectedCampaign.leadsProcessed} / {selectedCampaign.leadsTotal}</p>
                     </div>
-                    <div className="rounded-xl border border-stone-100 p-4 bg-stone-50/50">
-                      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Daily Limit</p>
-                      <p className="text-xl font-bold text-stone-900">{selectedCampaign.dailyLimit}</p>
+                    <div className="rounded-lg border border-gray-100 p-3">
+                      <p className="text-xs text-gray-400 mb-1">Daily Limit</p>
+                      <p className="text-xl font-semibold text-gray-900">{selectedCampaign.dailyLimit}</p>
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-stone-100 p-4 bg-stone-50/50">
-                    <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Template</p>
-                    <p className="text-sm font-bold text-stone-800">{selectedCampaign.template?.name || "No template assigned"}</p>
+                  <div className="rounded-lg border border-gray-100 p-3">
+                    <p className="text-xs text-gray-400 mb-1">Template</p>
+                    <p className="font-semibold text-gray-900">{selectedCampaign.template?.name || "No template assigned"}</p>
                   </div>
 
                   {selectedCampaign.objective && (
-                    <div className="rounded-xl border border-stone-100 p-4 bg-stone-50/50">
-                      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Objective</p>
-                      <p className="text-sm text-stone-600 font-medium leading-relaxed">{selectedCampaign.objective}</p>
+                    <div className="rounded-lg border border-gray-100 p-3">
+                      <p className="text-xs text-gray-400 mb-1">Objective</p>
+                      <p className="text-sm font-medium text-gray-900 leading-relaxed">{selectedCampaign.objective}</p>
                     </div>
                   )}
 
                   <div className="pt-4 border-t space-y-3">
-                    <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Campaign Controls</p>
+                    <p className="text-xs text-gray-400">Campaign Controls</p>
                     <div className="flex gap-2">
                       {selectedCampaign.stage === "Active" ? (
                         <button onClick={() => handleUpdateStage(selectedCampaign.id, "Paused")} className="flex-1 bg-yellow-50 text-yellow-600 border border-yellow-200 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 hover:bg-yellow-100">

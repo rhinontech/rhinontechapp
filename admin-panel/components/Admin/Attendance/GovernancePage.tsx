@@ -154,20 +154,22 @@ export function GovernancePage() {
 
       {/* Aside Panel */}
       <aside className={cn(
-        "flex h-full min-h-0 flex-col overflow-hidden bg-white border-l transition-all duration-300 ease-in-out rounded-xl",
-        isPreviewExpanded && selectedPolicy ? "w-[50%] ml-1.5" : "w-0"
+        "flex min-h-0 h-full flex-col bg-white rounded-xl overflow-hidden transition-all duration-200 ease-in-out",
+        isPreviewExpanded && selectedPolicy ? "w-[42%] ml-1.5" : "w-0"
       )}>
         {selectedPolicy && (
           <div className="flex h-full flex-col">
-            <div className="flex h-16 items-center justify-between border-b px-5 sticky top-0 bg-white z-10">
-              <p className="text-sm font-bold text-stone-900 uppercase tracking-widest">Policy Viewer</p>
+            <div className="sticky top-0 w-full flex items-center justify-between h-16 px-5 border-b bg-white z-10">
+              <div className="flex items-center gap-4 self-stretch">
+                <p className="flex self-stretch items-center text-md font-medium tracking-tight border-b-2 border-blue-600 text-black -mb-px">Policy Viewer</p>
+              </div>
               <div className="flex items-center gap-3">
                 {isSuperAdmin && (
-                  <button onClick={() => setIsEditing(!isEditing)} className="text-stone-400 hover:text-stone-900 transition-colors">
+                  <button onClick={() => setIsEditing(!isEditing)} className="text-gray-400 hover:text-gray-900 transition-colors">
                     <TbEdit size={20} />
                   </button>
                 )}
-                <button onClick={() => setIsPreviewExpanded(false)} className="text-stone-400 hover:text-stone-900 transition-colors">
+                <button onClick={() => setIsPreviewExpanded(false)} className="text-gray-400 hover:text-gray-900 transition-colors">
                   <TbLayoutSidebarRightFilled size={20} />
                 </button>
               </div>
@@ -204,15 +206,15 @@ export function GovernancePage() {
                 <article className="prose prose-stone max-w-none">
                   <div className="mb-8">
                     <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-2 py-1 rounded-full">{selectedPolicy.category}</span>
-                    <h2 className="text-3xl font-bold text-stone-900 mt-4 mb-2">{selectedPolicy.title}</h2>
-                    <div className="flex items-center gap-4 text-[10px] font-bold text-stone-400 uppercase tracking-widest">
+                    <h2 className="text-3xl font-bold text-gray-900 mt-4 mb-2">{selectedPolicy.title}</h2>
+                    <div className="flex items-center gap-4 text-xs text-gray-400">
                       <span>Version {selectedPolicy.version}</span>
                       <span>•</span>
                       <span>Updated {new Date(selectedPolicy.lastUpdated).toLocaleDateString()}</span>
                     </div>
                   </div>
 
-                  <div className="p-8 bg-stone-50 rounded-3xl border border-stone-100 leading-relaxed text-stone-700 whitespace-pre-wrap font-medium">
+                  <div className="p-5 bg-gray-50 rounded-lg border border-gray-100 leading-relaxed text-gray-700 whitespace-pre-wrap font-medium">
                     {selectedPolicy.content}
                   </div>
 

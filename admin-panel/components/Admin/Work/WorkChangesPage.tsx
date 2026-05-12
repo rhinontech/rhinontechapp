@@ -417,11 +417,11 @@ export function WorkChangesPage() {
         </div>
       </main>
 
-      <aside className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl bg-white transition-all duration-200 ease-in-out ${isPreviewExpanded && (visibleRequests.length > 0 || mode === "create") ? "w-[50%] ml-2" : "w-0"}`}>
+      <aside className={`flex min-h-0 h-full flex-col bg-white rounded-xl overflow-hidden transition-all duration-200 ease-in-out ${isPreviewExpanded && (visibleRequests.length > 0 || mode === "create") ? "w-[42%] ml-2" : "w-0"}`}>
         {isPreviewExpanded && (visibleRequests.length > 0 || mode === "create") && (
           <div className="flex h-full flex-1 flex-col overflow-hidden">
             <div className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-white px-5">
-              <p className="-mb-px flex self-stretch items-center border-b-2 border-blue-600 text-sm font-semibold text-gray-900">
+              <p className="-mb-px flex self-stretch items-center border-b-2 border-blue-600 text-md font-medium tracking-tight text-black">
                 {mode === "create" ? "Add item" : mode === "edit" ? "Edit item" : "Details"}
               </p>
               <div className="flex items-center gap-2">

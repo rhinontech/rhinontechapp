@@ -170,11 +170,11 @@ export function TemplatesPage() {
       </main>
 
       {/* Aside Panel */}
-      <aside className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl bg-white transition-all duration-200 ease-in-out ${isPreviewExpanded && (templates.length > 0 || panelMode === "create") ? "w-[50%] ml-2" : "w-0"}`}>
+      <aside className={`flex min-h-0 h-full flex-col bg-white rounded-xl overflow-hidden transition-all duration-200 ease-in-out ${isPreviewExpanded && (templates.length > 0 || panelMode === "create") ? "w-[42%] ml-2" : "w-0"}`}>
         {isPreviewExpanded && (templates.length > 0 || panelMode === "create") && (
           <div className="flex h-full flex-1 flex-col overflow-hidden">
             <div className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-white px-5">
-              <p className="-mb-px flex self-stretch items-center border-b-2 border-blue-600 text-sm font-semibold text-gray-900">
+              <p className="-mb-px flex self-stretch items-center border-b-2 border-blue-600 text-md font-medium tracking-tight text-black">
                 {panelMode === "create" ? "New Template" : panelMode === "edit" ? "Edit Template" : "Details"}
               </p>
               <div className="flex items-center gap-2">
@@ -201,9 +201,9 @@ export function TemplatesPage() {
 
                   <div className="space-y-4">
                     <DetailItem label="Subject Line" value={selectedTemplate.subject || "—"} />
-                    <div className="rounded-xl border border-gray-100 p-4 bg-stone-50/50">
-                      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-2">Message Body</p>
-                      <p className="text-sm text-stone-700 leading-relaxed whitespace-pre-wrap font-medium">{selectedTemplate.body}</p>
+                    <div className="rounded-lg border border-gray-100 p-3">
+                      <p className="text-xs text-gray-400 mb-2">Message Body</p>
+                      <p className="text-sm font-medium text-gray-900 leading-relaxed whitespace-pre-wrap">{selectedTemplate.body}</p>
                     </div>
                     {selectedTemplate.aiInstructions && (
                       <div className="rounded-xl border border-indigo-100 p-4 bg-indigo-50/30">
@@ -261,9 +261,9 @@ export function TemplatesPage() {
 
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-gray-100 p-3 bg-white">
-      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">{label}</p>
-      <p className="text-sm font-medium text-stone-800">{value}</p>
+    <div className="rounded-lg border border-gray-100 p-3">
+      <p className="text-xs text-gray-400 mb-1">{label}</p>
+      <p className="font-medium text-gray-900">{value}</p>
     </div>
   );
 }

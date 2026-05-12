@@ -276,11 +276,11 @@ export function LeadsPage() {
       </main>
 
       {/* Aside Panel */}
-      <aside className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl bg-white transition-all duration-200 ease-in-out ${isPreviewExpanded && (filteredLeads.length > 0 || panelMode === "create") ? "w-[50%] ml-2" : "w-0"}`}>
+      <aside className={`flex min-h-0 h-full flex-col bg-white rounded-xl overflow-hidden transition-all duration-200 ease-in-out ${isPreviewExpanded && (filteredLeads.length > 0 || panelMode === "create") ? "w-[42%] ml-2" : "w-0"}`}>
         {isPreviewExpanded && (filteredLeads.length > 0 || panelMode === "create") && (
           <div className="flex h-full flex-1 flex-col overflow-hidden">
             <div className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-white px-5">
-              <p className="-mb-px flex self-stretch items-center border-b-2 border-blue-600 text-sm font-semibold text-gray-900">
+              <p className="-mb-px flex self-stretch items-center border-b-2 border-blue-600 text-md font-medium tracking-tight text-black">
                 {panelMode === "create" ? "Add Lead" : panelMode === "edit" ? "Edit Lead" : "Details"}
               </p>
               <div className="flex items-center gap-2">
@@ -378,12 +378,12 @@ export function LeadsPage() {
 
 function DetailCard({ label, value, isLink }: { label: string; value: string; isLink?: boolean }) {
   return (
-    <div className="rounded-lg border border-gray-100 p-3 bg-white">
-      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">{label}</p>
+    <div className="rounded-lg border border-gray-100 p-3">
+      <p className="text-xs text-gray-400 mb-1">{label}</p>
       {isLink ? (
-        <a href={value.startsWith('http') ? value : `https://${value}`} target="_blank" className="text-sm font-medium text-blue-600 hover:underline truncate block">{value}</a>
+        <a href={value.startsWith('http') ? value : `https://${value}`} target="_blank" className="font-medium text-blue-600 hover:underline truncate block">{value}</a>
       ) : (
-        <p className="text-sm font-medium text-stone-800 leading-relaxed">{value}</p>
+        <p className="font-medium text-gray-900 leading-relaxed">{value}</p>
       )}
     </div>
   );

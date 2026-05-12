@@ -273,11 +273,11 @@ export function CampaignDetailPage({ id }: { id: string }) {
       </main>
 
       {/* Aside Panel */}
-      <aside className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl bg-white transition-all duration-200 ease-in-out ${isPreviewExpanded ? "w-[30%] ml-2" : "w-0"}`}>
+      <aside className={`flex min-h-0 h-full flex-col bg-white rounded-xl overflow-hidden transition-all duration-200 ease-in-out ${isPreviewExpanded ? "w-[42%] ml-2" : "w-0"}`}>
         {isPreviewExpanded && (
           <div className="flex h-full flex-1 flex-col overflow-hidden">
             <div className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-white px-5">
-              <p className="-mb-px flex self-stretch items-center border-b-2 border-blue-600 text-sm font-semibold text-gray-900">
+              <p className="-mb-px flex self-stretch items-center border-b-2 border-blue-600 text-md font-medium tracking-tight text-black">
                 Summary
               </p>
               <div className="flex items-center gap-2">
@@ -289,15 +289,15 @@ export function CampaignDetailPage({ id }: { id: string }) {
 
             <div className="flex-1 overflow-auto p-5 space-y-6">
               <div className="space-y-4">
-                <div className="rounded-xl border border-stone-100 p-4 bg-stone-50/50">
-                  <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Current Stage</p>
+                <div className="rounded-lg border border-gray-100 p-3">
+                  <p className="text-xs text-gray-400 mb-1">Current Stage</p>
                   <span className={cn("px-2.5 py-0.5 rounded-full text-[10px] font-bold border uppercase tracking-widest", STAGE_COLORS[campaign.stage])}>
                     {campaign.stage}
                   </span>
                 </div>
 
-                <div className="rounded-xl border border-stone-100 p-4 bg-stone-50/50">
-                  <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-2">Controls</p>
+                <div className="rounded-lg border border-gray-100 p-3">
+                  <p className="text-xs text-gray-400 mb-2">Controls</p>
                   <div className="flex gap-2">
                     {campaign.stage === "Active" ? (
                       <button onClick={() => updateStage("Paused")} className="flex-1 bg-yellow-50 text-yellow-600 border border-yellow-200 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2">
@@ -314,8 +314,8 @@ export function CampaignDetailPage({ id }: { id: string }) {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-stone-100 p-4 bg-stone-50/50">
-                  <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Details</p>
+                <div className="rounded-lg border border-gray-100 p-3">
+                  <p className="text-xs text-gray-400 mb-1">Details</p>
                   <div className="space-y-3 mt-3">
                     <DetailItem label="Daily Limit" value={`${campaign.dailyLimit} emails/day`} />
                     <DetailItem label="Start Date" value={new Date(campaign.startDate).toLocaleDateString()} />
@@ -334,8 +334,8 @@ export function CampaignDetailPage({ id }: { id: string }) {
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest">{label}</p>
-      <p className="text-xs font-bold text-stone-800">{value}</p>
+      <p className="text-xs text-gray-400">{label}</p>
+      <p className="font-semibold text-gray-900">{value}</p>
     </div>
   );
 }

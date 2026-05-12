@@ -133,43 +133,45 @@ export function ApprovalsPage() {
 
       {/* Aside Panel */}
       <aside className={cn(
-        "flex h-full min-h-0 flex-col overflow-hidden bg-white border-l transition-all duration-300 ease-in-out rounded-xl",
-        isPreviewExpanded && selectedRequest ? "w-[400px] ml-1.5" : "w-0"
+        "flex min-h-0 h-full flex-col bg-white rounded-xl overflow-hidden transition-all duration-200 ease-in-out",
+        isPreviewExpanded && selectedRequest ? "w-[42%] ml-1.5" : "w-0"
       )}>
         {selectedRequest && (
           <div className="flex h-full flex-col">
-            <div className="flex h-16 items-center justify-between border-b px-5">
-              <p className="text-sm font-bold text-stone-900 uppercase tracking-widest">Request Details</p>
-              <button onClick={() => setIsPreviewExpanded(false)} className="text-stone-400 hover:text-stone-900 transition-colors">
+            <div className="sticky top-0 w-full flex items-center justify-between h-16 px-5 border-b bg-white z-10">
+              <div className="flex items-center gap-4 self-stretch">
+                <p className="flex self-stretch items-center text-md font-medium tracking-tight border-b-2 border-blue-600 text-black -mb-px">Request Details</p>
+              </div>
+              <button onClick={() => setIsPreviewExpanded(false)} className="text-gray-400 hover:text-gray-900 transition-colors">
                 <TbLayoutSidebarRightFilled size={20} />
               </button>
             </div>
 
-            <div className="flex-1 overflow-auto p-6 space-y-8">
+            <div className="flex-1 overflow-auto p-5 space-y-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-stone-900 text-white flex items-center justify-center font-bold text-xl">
+                <div className="w-12 h-12 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold text-xl">
                   {selectedRequest.userName.charAt(0)}
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-stone-900 leading-tight">{selectedRequest.userName}</h2>
-                  <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">Employee Request</p>
+                  <h2 className="text-lg font-semibold text-gray-900 leading-tight">{selectedRequest.userName}</h2>
+                  <p className="text-xs text-gray-400">Employee Request</p>
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="p-4 bg-stone-50 rounded-2xl border border-stone-100">
-                  <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Date of Request</p>
-                  <p className="text-sm font-bold text-stone-900">{new Date(selectedRequest.date).toLocaleDateString("en-US", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+              <div className="space-y-3">
+                <div className="rounded-lg border border-gray-100 p-3">
+                  <p className="text-xs text-gray-400 mb-1">Date of Request</p>
+                  <p className="font-semibold text-gray-900">{new Date(selectedRequest.date).toLocaleDateString("en-US", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
                 </div>
 
-                <div className="p-4 bg-stone-50 rounded-2xl border border-stone-100">
-                  <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Requested Action</p>
-                  <p className="text-sm font-bold text-stone-900">Update clock-in to <span className="text-blue-600">{selectedRequest.details.requestedTime}</span></p>
+                <div className="rounded-lg border border-gray-100 p-3">
+                  <p className="text-xs text-gray-400 mb-1">Requested Action</p>
+                  <p className="font-semibold text-gray-900">Update clock-in to <span className="text-blue-600">{selectedRequest.details.requestedTime}</span></p>
                 </div>
 
-                <div className="p-4 bg-stone-50 rounded-2xl border border-stone-100">
-                  <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-2">Reason provided</p>
-                  <p className="text-sm text-stone-600 leading-relaxed font-medium">"{selectedRequest.reason}"</p>
+                <div className="rounded-lg border border-gray-100 p-3">
+                  <p className="text-xs text-gray-400 mb-2">Reason provided</p>
+                  <p className="text-sm text-gray-600 leading-relaxed font-medium">"{selectedRequest.reason}"</p>
                 </div>
               </div>
 

@@ -504,13 +504,13 @@ export function TasksPage({ scope }: { scope: TaskScope }) {
       </main>
 
       <aside
-        className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl transition-all duration-300 ease-in-out ${isPreviewExpanded && (visibleTasks.length > 0 || mode === "create") ? "w-[400px] shrink-0 ml-2" : "w-0"
+        className={`flex min-h-0 h-full flex-col bg-white rounded-xl overflow-hidden transition-all duration-200 ease-in-out ${isPreviewExpanded && (visibleTasks.length > 0 || mode === "create") ? "w-[42%] ml-2" : "w-0"
           }`}
       >
         {isPreviewExpanded && (visibleTasks.length > 0 || mode === "create") && (
-          <div className="flex h-full w-[400px] flex-col overflow-hidden">
+          <div className="flex h-full flex-col overflow-hidden">
             <div className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-white px-5 shrink-0">
-              <p className="-mb-px flex self-stretch items-center border-b-2 border-blue-600 text-sm font-semibold text-gray-900">
+              <p className="-mb-px flex self-stretch items-center border-b-2 border-blue-600 text-md font-medium tracking-tight text-black">
                 {mode === "create" ? "Add Task" : mode === "edit" ? "Edit Task" : "Task Details"}
               </p>
               <div className="flex items-center gap-2">
@@ -529,7 +529,7 @@ export function TasksPage({ scope }: { scope: TaskScope }) {
             </div>
 
             {mode === "view" ? (
-              <div className="flex-1 overflow-auto p-6">
+              <div className="flex-1 overflow-auto p-5">
                 {selectedTask ? (
                   <div className="space-y-6">
                     <div>

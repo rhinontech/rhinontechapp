@@ -152,68 +152,70 @@ export function AttendanceLogsPage() {
 
       {/* Aside Panel */}
       <aside className={cn(
-        "flex h-full min-h-0 flex-col overflow-hidden bg-white border-l transition-all duration-300 ease-in-out rounded-xl",
-        isPreviewExpanded && selectedLog ? "w-[400px] opacity-100 ml-1.5" : "w-0 opacity-0"
+        "flex min-h-0 h-full flex-col bg-white rounded-xl overflow-hidden transition-all duration-200 ease-in-out",
+        isPreviewExpanded && selectedLog ? "w-[42%] ml-1.5" : "w-0"
       )}>
         {selectedLog && (
           <div className="flex h-full flex-col">
-            <div className="flex h-16 items-center justify-between border-b px-5">
-              <p className="text-sm font-bold text-stone-900 uppercase tracking-widest">Shift Details</p>
-              <button onClick={() => setIsPreviewExpanded(false)} className="text-stone-400 hover:text-stone-900 transition-colors">
+            <div className="sticky top-0 w-full flex items-center justify-between h-16 px-5 border-b bg-white z-10">
+              <div className="flex items-center gap-4 self-stretch">
+                <p className="flex self-stretch items-center text-md font-medium tracking-tight border-b-2 border-blue-600 text-black -mb-px">Shift Details</p>
+              </div>
+              <button onClick={() => setIsPreviewExpanded(false)} className="text-gray-400 hover:text-gray-900 transition-colors">
                 <TbLayoutSidebarRightFilled size={20} />
               </button>
             </div>
 
-            <div className="flex-1 overflow-auto p-6 space-y-8">
+            <div className="flex-1 overflow-auto p-5 space-y-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-stone-900 text-white flex items-center justify-center font-bold text-xl">
+                <div className="w-12 h-12 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold text-xl">
                   {selectedLog.userName.charAt(0)}
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-stone-900 leading-tight">{selectedLog.userName}</h2>
-                  <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">{selectedLog.department}</p>
+                  <h2 className="text-lg font-semibold text-gray-900 leading-tight">{selectedLog.userName}</h2>
+                  <p className="text-xs text-gray-400">{selectedLog.department}</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-stone-50 rounded-2xl border border-stone-100">
-                  <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Clock In</p>
-                  <p className="text-lg font-bold text-stone-900">{selectedLog.clockIn ? new Date(selectedLog.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "—"}</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg border border-gray-100 p-3">
+                  <p className="text-xs text-gray-400 mb-1">Clock In</p>
+                  <p className="font-semibold text-gray-900">{selectedLog.clockIn ? new Date(selectedLog.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "—"}</p>
                 </div>
-                <div className="p-4 bg-stone-50 rounded-2xl border border-stone-100">
-                  <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Clock Out</p>
-                  <p className="text-lg font-bold text-stone-900">{selectedLog.clockOut ? new Date(selectedLog.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "—"}</p>
+                <div className="rounded-lg border border-gray-100 p-3">
+                  <p className="text-xs text-gray-400 mb-1">Clock Out</p>
+                  <p className="font-semibold text-gray-900">{selectedLog.clockOut ? new Date(selectedLog.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "—"}</p>
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-white border border-stone-100 rounded-2xl shadow-sm">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between rounded-lg border border-gray-100 p-3">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><TbClock size={20} /></div>
-                    <span className="text-sm font-bold text-stone-700">Total Duration</span>
+                    <span className="text-sm font-medium text-gray-900">Total Duration</span>
                   </div>
-                  <span className="text-sm font-bold text-stone-900">{Math.floor(selectedLog.durationMinutes / 60)}h {selectedLog.durationMinutes % 60}m</span>
+                  <span className="text-sm font-semibold text-gray-900">{Math.floor(selectedLog.durationMinutes / 60)}h {selectedLog.durationMinutes % 60}m</span>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-white border border-stone-100 rounded-2xl shadow-sm">
+                <div className="flex items-center justify-between rounded-lg border border-gray-100 p-3">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-green-50 text-green-600 rounded-lg"><TbPlus size={20} /></div>
-                    <span className="text-sm font-bold text-stone-700">Overtime</span>
+                    <span className="text-sm font-medium text-gray-900">Overtime</span>
                   </div>
-                  <span className="text-sm font-bold text-green-600">{selectedLog.overtimeMinutes > 0 ? `+${selectedLog.overtimeMinutes}m` : "None"}</span>
+                  <span className="text-sm font-semibold text-green-600">{selectedLog.overtimeMinutes > 0 ? `+${selectedLog.overtimeMinutes}m` : "None"}</span>
                 </div>
 
-                <div className="p-4 bg-red-50 border border-red-100 rounded-2xl">
+                <div className="p-3 bg-red-50 border border-red-100 rounded-lg">
                   <div className="flex items-center gap-2 mb-3 text-red-600">
                     <TbAlertCircle size={18} />
-                    <span className="text-[10px] font-bold uppercase tracking-widest">Penalties & Deductions</span>
+                    <span className="text-xs text-gray-400">Penalties & Deductions</span>
                   </div>
                   {selectedLog.penalties.length > 0 ? (
                     <div className="space-y-2">
                       {selectedLog.penalties.map((p, i) => (
                         <div key={i} className="flex justify-between items-center text-sm">
                           <span className="font-medium text-red-800">{p.reason}</span>
-                          <span className="font-bold text-red-900">-${p.amount}</span>
+                          <span className="font-semibold text-red-900">-${p.amount}</span>
                         </div>
                       ))}
                     </div>
@@ -223,8 +225,8 @@ export function AttendanceLogsPage() {
                 </div>
               </div>
 
-              <div className="pt-6 border-t">
-                <button className="w-full py-3 bg-stone-900 text-white rounded-xl font-bold text-sm hover:bg-stone-800 transition-colors shadow-lg active:scale-95">
+              <div className="pt-4 border-t">
+                <button className="w-full py-3 bg-gray-900 text-white rounded-xl font-semibold text-sm hover:bg-gray-800 transition-colors shadow-lg active:scale-95">
                   Regularize Record
                 </button>
               </div>
