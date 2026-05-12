@@ -142,23 +142,23 @@ export function CyclesPage() {
   const asideOpen = asideMode === "create" || selected !== null;
 
   return (
-    <div className={cn("flex flex-col h-full bg-stone-50 overflow-hidden", isSubNavExpanded ? "rounded-r-xl" : "rounded-xl")}>
-      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 h-16 px-5 border-b bg-stone-50">
-        <div className="flex items-center gap-3">
-          <SubNavToggle />
-          <span className="text-lg font-semibold tracking-tight">Review Cycles</span>
+    <div className="flex min-h-0 gap-2 h-full overflow-hidden">
+      <main className={cn("flex min-h-0 flex-col h-full w-full bg-stone-50 overflow-hidden", isSubNavExpanded ? "rounded-r-xl" : "rounded-xl")}>
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-4 h-16 px-5 border-b bg-stone-50">
+          <div className="flex items-center gap-3">
+            <SubNavToggle />
+            <span className="text-lg font-semibold tracking-tight">Review Cycles</span>
+          </div>
+          <button
+            onClick={openCreate}
+            className="flex items-center gap-1.5 rounded-lg bg-stone-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-stone-800 transition-colors"
+          >
+            <TbPlus size={16} />
+            New Cycle
+          </button>
         </div>
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
-        >
-          <TbPlus size={16} />
-          New Cycle
-        </button>
-      </header>
 
-      <div className="flex flex-1 min-h-0">
-        <div className="flex-1 overflow-y-auto p-5">
+        <div className="flex-1 overflow-auto p-5">
           {loading ? (
             <div className="flex items-center justify-center h-40">
               <TbLoader2 className="animate-spin text-gray-400" size={28} />
@@ -195,12 +195,12 @@ export function CyclesPage() {
             </div>
           )}
         </div>
+      </main>
 
-        {/* Aside panel */}
-        <aside className={cn(
-          "flex min-h-0 h-full flex-col bg-white rounded-xl overflow-hidden transition-all duration-200 ease-in-out",
-          asideOpen ? "w-[42%]" : "w-0"
-        )}>
+      <aside className={cn(
+        "flex min-h-0 h-full flex-col bg-white rounded-xl overflow-hidden transition-all duration-200 ease-in-out",
+        asideOpen ? "w-[42%]" : "w-0"
+      )}>
           {asideOpen && (
             <>
               <div className="sticky top-0 w-full flex items-center justify-between h-16 px-5 border-b bg-white z-10">
@@ -262,7 +262,7 @@ export function CyclesPage() {
                 <button
                   onClick={handleSave}
                   disabled={saving || !form.name || !form.startDate || !form.endDate}
-                  className="w-full rounded-lg bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                  className="w-full rounded-lg bg-stone-900 py-2 text-sm font-medium text-white hover:bg-stone-800 disabled:opacity-50 transition-colors"
                 >
                   {saving ? "Saving…" : asideMode === "create" ? "Create Cycle" : "Save Changes"}
                 </button>
@@ -321,8 +321,7 @@ export function CyclesPage() {
               </div>
             </>
           )}
-        </aside>
-      </div>
+      </aside>
     </div>
   );
 }

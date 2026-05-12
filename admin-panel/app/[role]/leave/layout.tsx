@@ -12,17 +12,18 @@ function LeaveLayoutContent({ children }: { children: React.ReactNode }) {
   const base = `/${roleSlug}/leave`;
   const isAdmin = roleSlug === "superadmin" || roleSlug === "hr";
 
-  const items = [
-    { label: "Overview", href: base, icon: <TbCalendarOff size={18} />, exact: true },
-    { label: "My Leaves", href: `${base}/requests`, icon: <TbCalendarEvent size={18} /> },
-    ...(isAdmin
-      ? [
-          { label: "Team Calendar", href: `${base}/calendar`, icon: <TbCalendarStats size={18} /> },
-          { label: "Approvals", href: `${base}/approvals`, icon: <TbCheck size={18} /> },
-          { label: "Policies", href: `${base}/policies`, icon: <TbTarget size={18} /> },
-        ]
-      : []),
-  ];
+  const items = isAdmin
+    ? [
+        { label: "Overview",      href: base,                  icon: <TbCalendarOff   size={18} />, exact: true },
+        { label: "All Requests",  href: `${base}/requests`,    icon: <TbCalendarEvent size={18} /> },
+        { label: "Team Calendar", href: `${base}/calendar`,    icon: <TbCalendarStats size={18} /> },
+        { label: "Approvals",     href: `${base}/approvals`,   icon: <TbCheck         size={18} /> },
+        { label: "Policies",      href: `${base}/policies`,    icon: <TbTarget        size={18} /> },
+      ]
+    : [
+        { label: "Overview",  href: base,               icon: <TbCalendarOff   size={18} />, exact: true },
+        { label: "My Leaves", href: `${base}/requests`, icon: <TbCalendarEvent size={18} /> },
+      ];
 
   return (
     <div className="flex w-full h-full">

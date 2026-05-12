@@ -191,7 +191,7 @@ function UploadModal({ onClose, onSuccess, prefillDocId, prefillTitle, prefillCa
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-2 text-sm rounded-lg bg-stone-900 text-white hover:bg-stone-800 disabled:opacity-50"
             >
               {loading ? "Uploading..." : "Upload"}
             </button>
@@ -218,7 +218,7 @@ function DocAside({ doc, onClose }: { doc: Doc; onClose: () => void }) {
   }
 
   return (
-    <div className="w-[42%] flex min-h-0 h-full flex-col bg-white rounded-xl overflow-hidden transition-all duration-200 ease-in-out">
+    <div className="flex min-h-0 h-full w-full flex-col overflow-hidden">
       <div className="sticky top-0 w-full flex items-center justify-between h-16 px-5 border-b bg-white z-10">
         <p className="flex self-stretch items-center text-md font-medium tracking-tight border-b-2 border-blue-600 text-black -mb-px">
           Document Details
@@ -259,7 +259,7 @@ function DocAside({ doc, onClose }: { doc: Doc; onClose: () => void }) {
           <button
             onClick={handleDownload}
             disabled={downloading}
-            className="flex items-center gap-2 justify-center w-full py-2.5 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+            className="flex items-center gap-2 justify-center w-full py-2.5 rounded-lg bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-50"
           >
             <TbDownload size={16} />
             {downloading ? "Getting link..." : "Download"}
@@ -301,24 +301,24 @@ export function MyDocumentsPage() {
     : actualDocs.filter(d => d.category === categoryFilter);
 
   return (
-    <div className={cn("flex flex-col h-full bg-stone-50 overflow-hidden", isSubNavExpanded ? "rounded-r-xl" : "rounded-xl")}>
-      {/* Header */}
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-4 h-16 px-5 border-b bg-stone-50">
-        <div className="flex items-center gap-2">
-          <SubNavToggle />
-          <p className="text-lg font-semibold tracking-tight">My Documents</p>
+    <div className="flex min-h-0 gap-2 h-full overflow-hidden">
+      <main className={cn("flex min-h-0 flex-col h-full w-full bg-stone-50 overflow-hidden", isSubNavExpanded ? "rounded-r-xl" : "rounded-xl")}>
+        {/* Header */}
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-4 h-16 px-5 border-b bg-stone-50">
+          <div className="flex items-center gap-2">
+            <SubNavToggle />
+            <p className="text-lg font-semibold tracking-tight">My Documents</p>
+          </div>
+          <button
+            onClick={() => setShowUpload(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-stone-900 text-white text-sm font-medium hover:bg-stone-800"
+          >
+            <TbUpload size={16} />
+            Upload Document
+          </button>
         </div>
-        <button
-          onClick={() => setShowUpload(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
-        >
-          <TbUpload size={16} />
-          Upload Document
-        </button>
-      </div>
 
-      <div className="flex flex-1 min-h-0 overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-5">
+        <div className="flex-1 overflow-auto p-5 flex flex-col gap-5">
           {/* Category Tabs */}
           <div className="flex gap-1 flex-wrap">
             {(["all", ...ALL_CATEGORIES] as const).map(c => (
@@ -328,7 +328,7 @@ export function MyDocumentsPage() {
                 className={cn(
                   "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
                   categoryFilter === c
-                    ? "bg-blue-600 text-white"
+                    ? "bg-stone-900 text-white"
                     : "bg-white border text-gray-600 hover:bg-gray-50"
                 )}
               >
@@ -401,14 +401,16 @@ export function MyDocumentsPage() {
             </div>
           )}
         </div>
+      </main>
 
-        {/* Aside */}
+      <aside className={cn(
+        "flex min-h-0 h-full flex-col bg-white rounded-xl overflow-hidden transition-all duration-200 ease-in-out",
+        selectedDoc ? "w-[42%]" : "w-0"
+      )}>
         {selectedDoc && (
-          <div className="flex p-3 pl-0">
-            <DocAside doc={selectedDoc} onClose={() => setSelectedDoc(null)} />
-          </div>
+          <DocAside doc={selectedDoc} onClose={() => setSelectedDoc(null)} />
         )}
-      </div>
+      </aside>
 
       {/* Modals */}
       {showUpload && (

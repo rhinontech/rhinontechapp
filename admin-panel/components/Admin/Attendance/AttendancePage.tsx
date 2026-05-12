@@ -168,12 +168,9 @@ function TeamAttendancePage() {
 
   return (
     <div className={cn("flex flex-col h-full bg-stone-50 overflow-hidden", isSubNavExpanded ? "rounded-r-xl" : "rounded-xl")}>
-      <div className="flex h-16 items-center gap-2 border-b px-4 bg-white">
+      <div className="sticky top-0 z-10 flex h-16 items-center gap-3 border-b px-5 bg-stone-50">
         <SubNavToggle />
-        <div>
-          <h1 className="text-base font-semibold tracking-tight text-gray-900">Team Attendance</h1>
-          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Overview</p>
-        </div>
+        <span className="text-lg font-semibold tracking-tight">Team Attendance</span>
       </div>
 
       <div className="flex-1 overflow-auto">
@@ -405,12 +402,9 @@ function PersonalTimesheetPage() {
 
   return (
     <div className={cn("flex flex-col h-full bg-stone-50 overflow-hidden", isSubNavExpanded ? "rounded-r-xl" : "rounded-xl")}>
-      <div className="flex h-16 items-center gap-2 border-b px-4 bg-white">
+      <div className="sticky top-0 z-10 flex h-16 items-center gap-3 border-b px-5 bg-stone-50">
         <SubNavToggle />
-        <div>
-          <h1 className="text-base font-semibold tracking-tight text-gray-900">My Timesheet</h1>
-          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Attendance</p>
-        </div>
+        <span className="text-lg font-semibold tracking-tight">My Timesheet</span>
       </div>
 
       <div className="flex-1 overflow-auto">

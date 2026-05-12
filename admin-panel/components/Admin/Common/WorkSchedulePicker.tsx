@@ -103,7 +103,7 @@ export function WorkSchedulePicker({ value, onChange }: Props) {
               onClick={() => toggleDay(day)}
               className={`h-8 w-10 rounded-lg text-xs font-semibold border transition-colors ${
                 active
-                  ? "bg-blue-600 border-blue-600 text-white"
+                  ? "bg-stone-900 border-blue-600 text-white"
                   : "bg-white border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600"
               }`}
             >

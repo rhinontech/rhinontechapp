@@ -85,12 +85,12 @@ export function LeaveApprovalsPage() {
   };
 
   return (
-    <div className="flex h-full min-h-0 overflow-hidden">
+    <div className="flex min-h-0 gap-2 h-full overflow-hidden">
       <main className={cn(
-        "flex h-full min-h-0 w-full flex-col overflow-hidden bg-white border-r",
+        "flex min-h-0 flex-col h-full w-full overflow-hidden bg-stone-50",
         isSubNavExpanded ? "rounded-r-xl" : "rounded-xl"
       )}>
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-4 h-16 px-5 border-b bg-white">
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-4 h-16 px-5 border-b bg-stone-50">
           <div className="flex items-center gap-3">
             <SubNavToggle />
             <h1 className="text-lg font-semibold tracking-tight">Leave Approvals</h1>
@@ -149,7 +149,7 @@ export function LeaveApprovalsPage() {
       {/* Aside Panel */}
       <aside className={cn(
         "flex min-h-0 h-full flex-col bg-white rounded-xl overflow-hidden transition-all duration-200 ease-in-out",
-        isPanelOpen && selected ? "w-[42%] ml-1.5" : "w-0"
+        isPanelOpen && selected ? "w-[42%]" : "w-0"
       )}>
         {selected && (
           <div className="flex h-full flex-col">

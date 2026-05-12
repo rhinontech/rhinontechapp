@@ -276,7 +276,7 @@ export function AdminPayrollEntry() {
                     </p>
                   </div>
                   <div
-                    className={cn("w-9 h-5 rounded-full flex items-center px-0.5 shrink-0 cursor-pointer transition-colors", pfEnabled ? "bg-blue-600" : "bg-gray-200")}
+                    className={cn("w-9 h-5 rounded-full flex items-center px-0.5 shrink-0 cursor-pointer transition-colors", pfEnabled ? "bg-stone-900" : "bg-gray-200")}
                     onClick={() => setPfEnabled((v) => !v)}
                   >
                     <div className={cn("w-4 h-4 bg-white rounded-full shadow-sm transition-transform", pfEnabled ? "translate-x-4" : "translate-x-0")} />

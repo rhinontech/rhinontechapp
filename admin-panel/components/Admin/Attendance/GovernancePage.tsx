@@ -219,7 +219,7 @@ export function GovernancePage() {
                   </div>
 
                   <div className="mt-12 p-6 bg-blue-50 rounded-2xl border border-blue-100 flex items-start gap-4">
-                    <div className="p-2 bg-blue-600 text-white rounded-lg shadow-md"><TbTarget size={20} /></div>
+                    <div className="p-2 bg-stone-900 text-white rounded-lg shadow-md"><TbTarget size={20} /></div>
                     <div>
                       <p className="text-sm font-bold text-blue-900">Compliance Required</p>
                       <p className="text-xs text-blue-700 mt-1">All employees must read and acknowledge this policy by the end of this quarter.</p>

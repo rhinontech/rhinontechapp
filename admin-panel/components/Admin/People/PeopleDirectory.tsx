@@ -493,7 +493,7 @@ export function PeopleDirectory() {
                     >
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-semibold shrink-0 overflow-hidden">
+                          <div className="w-8 h-8 rounded-full bg-stone-900 flex items-center justify-center text-white text-xs font-semibold shrink-0 overflow-hidden">
                             {emp.avatarUrl ? <img src={emp.avatarUrl} alt={emp.fullName} className="w-full h-full object-cover" /> : initials(emp.fullName)}
                           </div>
                           <div>
@@ -554,7 +554,7 @@ export function PeopleDirectory() {
                     {/* Avatar + name — always visible */}
                     <div className="flex items-center gap-4">
                       <div className="relative group shrink-0">
-                        <div className="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center text-white text-lg font-semibold overflow-hidden">
+                        <div className="w-14 h-14 rounded-full bg-stone-900 flex items-center justify-center text-white text-lg font-semibold overflow-hidden">
                           {selectedEmployee.avatarUrl
                             ? <img src={selectedEmployee.avatarUrl} alt={selectedEmployee.fullName} className="w-full h-full object-cover" />
                             : initials(selectedEmployee.fullName)}
@@ -734,7 +734,7 @@ export function PeopleDirectory() {
                   <button type="button" onClick={() => setMode("view")} className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
                     Cancel
                   </button>
-                  <button type="submit" disabled={saving} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60">
+                  <button type="submit" disabled={saving} className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-800 disabled:opacity-60">
                     {saving ? "Saving..." : mode === "create" ? "Add member" : "Save changes"}
                   </button>
                 </div>

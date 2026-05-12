@@ -483,7 +483,7 @@ export function AdminPayrollEmployees() {
                       <p className="text-xs text-gray-400 mt-0.5">Provident Fund — employee contribution</p>
                     </div>
                     <div
-                      className={cn("w-9 h-5 rounded-full transition-colors flex items-center px-0.5 shrink-0 cursor-pointer", form.pfEnabled ? "bg-blue-600" : "bg-gray-200")}
+                      className={cn("w-9 h-5 rounded-full transition-colors flex items-center px-0.5 shrink-0 cursor-pointer", form.pfEnabled ? "bg-stone-900" : "bg-gray-200")}
                       onClick={() => setForm((f) => ({ ...f, pfEnabled: !f.pfEnabled }))}
                     >
                       <div className={cn("w-4 h-4 bg-white rounded-full shadow-sm transition-transform", form.pfEnabled ? "translate-x-4" : "translate-x-0")} />
@@ -548,7 +548,7 @@ export function AdminPayrollEmployees() {
                   <button
                     onClick={save}
                     disabled={saving}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-800 disabled:opacity-50"
                   >
                     {saving ? <TbLoader2 size={15} className="animate-spin" /> : <TbCheck size={15} />}
                     Save changes

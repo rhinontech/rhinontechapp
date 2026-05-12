@@ -65,13 +65,10 @@ export function AttendanceLogsPage() {
   return (
     <div className="flex h-full min-h-0 overflow-hidden">
       <main className={cn("flex h-full min-h-0 w-full flex-col overflow-hidden shadow-sm border-r", isSubNavExpanded ? "rounded-r-xl" : "rounded-xl")}>
-        <div className="flex h-16 items-center justify-between border-b px-4 bg-white">
+        <div className="sticky top-0 z-10 flex h-16 items-center justify-between border-b px-5 bg-stone-50">
           <div className="flex items-center gap-3">
             <SubNavToggle />
-            <div>
-              <h1 className="text-base font-semibold tracking-tight text-gray-900">Attendance Logs</h1>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Timesheets & Penalties</p>
-            </div>
+            <span className="text-lg font-semibold tracking-tight">Attendance Logs</span>
           </div>
           <div className="flex items-center gap-2">
             <button className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-stone-600 hover:bg-stone-100 transition-all">

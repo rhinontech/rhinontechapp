@@ -147,16 +147,16 @@ export function ReviewsPage() {
   const isReadOnly = selected?.status === "submitted";
 
   return (
-    <div className={cn("flex flex-col h-full bg-stone-50 overflow-hidden", isSubNavExpanded ? "rounded-r-xl" : "rounded-xl")}>
-      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 h-16 px-5 border-b bg-stone-50">
-        <div className="flex items-center gap-3">
-          <SubNavToggle />
-          <span className="text-lg font-semibold tracking-tight">My Reviews</span>
+    <div className="flex min-h-0 gap-2 h-full overflow-hidden">
+      <main className={cn("flex min-h-0 flex-col h-full w-full bg-stone-50 overflow-hidden", isSubNavExpanded ? "rounded-r-xl" : "rounded-xl")}>
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-4 h-16 px-5 border-b bg-stone-50">
+          <div className="flex items-center gap-3">
+            <SubNavToggle />
+            <span className="text-lg font-semibold tracking-tight">My Reviews</span>
+          </div>
         </div>
-      </header>
 
-      <div className="flex flex-1 min-h-0">
-        <div className="flex-1 overflow-y-auto p-5 space-y-6">
+        <div className="flex-1 overflow-auto p-5 space-y-6">
           {loading ? (
             <div className="flex items-center justify-center h-40">
               <TbLoader2 className="animate-spin text-gray-400" size={28} />
@@ -223,12 +223,12 @@ export function ReviewsPage() {
             </>
           )}
         </div>
+      </main>
 
-        {/* Aside panel */}
-        <aside className={cn(
-          "flex min-h-0 h-full flex-col bg-white rounded-xl overflow-hidden transition-all duration-200 ease-in-out",
-          selected ? "w-[42%]" : "w-0"
-        )}>
+      <aside className={cn(
+        "flex min-h-0 h-full flex-col bg-white rounded-xl overflow-hidden transition-all duration-200 ease-in-out",
+        selected ? "w-[42%]" : "w-0"
+      )}>
           {selected && (
             <>
               <div className="sticky top-0 w-full flex items-center justify-between h-16 px-5 border-b bg-white z-10">
@@ -334,7 +334,7 @@ export function ReviewsPage() {
                   <button
                     onClick={handleSubmit}
                     disabled={saving || (selected.type === "self" ? !form.selfRating : !form.managerRating)}
-                    className="w-full rounded-lg bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                    className="w-full rounded-lg bg-stone-900 py-2 text-sm font-medium text-white hover:bg-stone-800 disabled:opacity-50 transition-colors"
                   >
                     {saving ? "Submitting…" : "Submit Review"}
                   </button>
@@ -348,8 +348,7 @@ export function ReviewsPage() {
               </div>
             </>
           )}
-        </aside>
-      </div>
+      </aside>
     </div>
   );
 }

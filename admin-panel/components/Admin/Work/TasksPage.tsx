@@ -627,7 +627,7 @@ export function TasksPage({ scope }: { scope: TaskScope }) {
                   <button type="button" onClick={() => setMode("view")} className="rounded-lg px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-200 transition-colors">
                     Cancel
                   </button>
-                  <button type="submit" disabled={saving} className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60 transition-colors">
+                  <button type="submit" disabled={saving} className="rounded-lg bg-stone-900 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-stone-800 disabled:opacity-60 transition-colors">
                     {saving ? "Saving..." : "Save Task"}
                   </button>
                 </div>

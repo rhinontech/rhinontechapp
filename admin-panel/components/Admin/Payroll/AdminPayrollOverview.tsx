@@ -121,7 +121,7 @@ export function AdminPayrollOverview() {
         </div>
         <Link
           href={`/${roleSlug}/payroll/run`}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-stone-900 text-white text-sm font-medium rounded-lg hover:bg-stone-800 transition-colors"
         >
           <MdOutlinePlayCircle size={16} /> Run Payroll
         </Link>
@@ -180,7 +180,7 @@ export function AdminPayrollOverview() {
             <div className="p-12 text-center">
               <p className="text-sm text-gray-500 font-medium">No payroll runs yet</p>
               <p className="text-xs text-gray-400 mt-1">Use "Run Payroll" to generate the first month.</p>
-              <Link href={`/${roleSlug}/payroll/run`} className="inline-flex items-center gap-1.5 mt-4 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
+              <Link href={`/${roleSlug}/payroll/run`} className="inline-flex items-center gap-1.5 mt-4 px-4 py-2 bg-stone-900 text-white text-sm rounded-lg hover:bg-stone-800">
                 <MdOutlinePlayCircle size={14} /> Run First Payroll
               </Link>
             </div>

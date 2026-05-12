@@ -163,7 +163,7 @@ function RequestModal({ employees, onClose, onSuccess }: RequestModalProps) {
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-2 text-sm rounded-lg bg-stone-900 text-white hover:bg-stone-800 disabled:opacity-50"
             >
               {loading ? "Requesting..." : "Send Request"}
             </button>
@@ -272,7 +272,7 @@ export function RequestsPage() {
         </div>
         <button
           onClick={() => setShowRequest(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-stone-900 text-white text-sm font-medium hover:bg-stone-800"
         >
           <TbFileAlert size={16} />
           Request Document

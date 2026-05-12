@@ -121,7 +121,7 @@ export function ProfileInfo() {
             </button>
           ) : (
             <div className="flex items-center gap-2">
-              <button onClick={save} disabled={saving} className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+              <button onClick={save} disabled={saving} className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-stone-900 text-white rounded-lg hover:bg-stone-800 disabled:opacity-50">
                 {saving ? <TbLoader2 size={14} className="animate-spin" /> : <TbCheck size={14} />} Save
               </button>
               <button onClick={cancelEdit} className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50">
@@ -242,7 +242,7 @@ export function ProfileInfo() {
                     <button
                       type="button"
                       onClick={() => setForm((f) => ({ ...f, remotePosition: !f.remotePosition }))}
-                      className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors ${form.remotePosition ? "bg-blue-600" : "bg-gray-200"}`}
+                      className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors ${form.remotePosition ? "bg-stone-900" : "bg-gray-200"}`}
                     >
                       <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${form.remotePosition ? "translate-x-4" : "translate-x-0"}`} />
                     </button>

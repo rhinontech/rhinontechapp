@@ -118,7 +118,7 @@ export function AdminPayrollRun() {
             <div className="flex gap-3 justify-center">
               <Link
                 href={`/${roleSlug}/payroll/overview`}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700"
+                className="flex items-center gap-2 px-4 py-2 bg-stone-900 text-white text-sm font-medium rounded-lg hover:bg-stone-800"
               >
                 View Dashboard <TbChevronRight size={14} />
               </Link>
@@ -251,7 +251,7 @@ export function AdminPayrollRun() {
           <button
             onClick={run}
             disabled={running || eligible.length === 0}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-6 py-3 bg-stone-900 text-white font-medium rounded-lg hover:bg-stone-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {running ? <TbLoader2 size={18} className="animate-spin" /> : <MdOutlinePlayCircle size={18} />}
             {running ? "Running…" : `Run Payroll for ${MONTHS[month - 1]} ${year}`}

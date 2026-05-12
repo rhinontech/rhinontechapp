@@ -194,7 +194,7 @@ export function SettingsRoles() {
               <button
                 onClick={createRole}
                 disabled={saving || !newRoleName.trim()}
-                className="flex-1 text-xs bg-blue-600 text-white rounded-md py-1.5 hover:bg-blue-700 disabled:opacity-50"
+                className="flex-1 text-xs bg-stone-900 text-white rounded-md py-1.5 hover:bg-stone-800 disabled:opacity-50"
               >
                 {saving ? "Creating..." : "Create"}
               </button>
@@ -306,7 +306,7 @@ export function SettingsRoles() {
                             <div
                               className={cn(
                                 "w-9 h-5 rounded-full transition-colors flex items-center px-0.5 shrink-0",
-                                enabled ? "bg-blue-600" : "bg-gray-200"
+                                enabled ? "bg-stone-900" : "bg-gray-200"
                               )}
                               onClick={() => !locked && togglePermission(perm.id)}
                             >

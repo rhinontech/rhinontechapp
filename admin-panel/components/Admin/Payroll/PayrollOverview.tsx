@@ -116,7 +116,7 @@ export function PayrollOverview() {
             <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
               <div className="flex items-center justify-between px-5 py-4 border-b">
                 <p className="font-semibold text-gray-900">My Requests</p>
-                <button className="flex items-center gap-1 text-xs bg-blue-600 text-white px-2.5 py-1.5 rounded-lg hover:bg-blue-700 transition-colors">
+                <button className="flex items-center gap-1 text-xs bg-stone-900 text-white px-2.5 py-1.5 rounded-lg hover:bg-stone-800 transition-colors">
                   <TbPlus size={13} /> New
                 </button>
               </div>

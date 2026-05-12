@@ -68,16 +68,16 @@ export function TeamReviewsPage() {
   useEffect(() => { load(); }, [load]);
 
   return (
-    <div className={cn("flex flex-col h-full bg-stone-50 overflow-hidden", isSubNavExpanded ? "rounded-r-xl" : "rounded-xl")}>
-      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 h-16 px-5 border-b bg-stone-50">
-        <div className="flex items-center gap-3">
-          <SubNavToggle />
-          <span className="text-lg font-semibold tracking-tight">Team Reviews</span>
+    <div className="flex min-h-0 gap-2 h-full overflow-hidden">
+      <main className={cn("flex min-h-0 flex-col h-full w-full bg-stone-50 overflow-hidden", isSubNavExpanded ? "rounded-r-xl" : "rounded-xl")}>
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-4 h-16 px-5 border-b bg-stone-50">
+          <div className="flex items-center gap-3">
+            <SubNavToggle />
+            <span className="text-lg font-semibold tracking-tight">Team Reviews</span>
+          </div>
         </div>
-      </header>
 
-      <div className="flex flex-1 min-h-0">
-        <div className="flex-1 overflow-y-auto p-5">
+        <div className="flex-1 overflow-auto p-5">
           {loading ? (
             <div className="flex items-center justify-center h-40">
               <TbLoader2 className="animate-spin text-gray-400" size={28} />
@@ -129,12 +129,12 @@ export function TeamReviewsPage() {
             </div>
           )}
         </div>
+      </main>
 
-        {/* Aside panel */}
-        <aside className={cn(
-          "flex min-h-0 h-full flex-col bg-white rounded-xl overflow-hidden transition-all duration-200 ease-in-out",
-          selected ? "w-[42%]" : "w-0"
-        )}>
+      <aside className={cn(
+        "flex min-h-0 h-full flex-col bg-white rounded-xl overflow-hidden transition-all duration-200 ease-in-out",
+        selected ? "w-[42%]" : "w-0"
+      )}>
           {selected && (
             <>
               <div className="sticky top-0 w-full flex items-center justify-between h-16 px-5 border-b bg-white z-10">
@@ -199,8 +199,7 @@ export function TeamReviewsPage() {
               </div>
             </>
           )}
-        </aside>
-      </div>
+      </aside>
     </div>
   );
 }

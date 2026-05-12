@@ -267,7 +267,7 @@ export function CampaignsPage() {
                     <button type="button" onClick={() => setShowAddPanel(false)} className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
                       Cancel
                     </button>
-                    <button type="submit" disabled={saving} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60 transition-colors">
+                    <button type="submit" disabled={saving} className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-800 disabled:opacity-60 transition-colors">
                       {saving ? "Creating..." : "Create Campaign"}
                     </button>
                   </div>

@@ -182,7 +182,7 @@ export function PayslipDetail({ id }: { id: string }) {
         </div>
 
         {/* Net pay banner */}
-        <div className="bg-blue-600 px-8 py-4 flex items-center justify-between">
+        <div className="bg-stone-900 px-8 py-4 flex items-center justify-between">
           <p className="text-blue-100 text-sm">Take-Home (Net Pay)</p>
           <p className="text-white text-2xl font-bold">₹{fmt(slip.netPay)}</p>
         </div>
