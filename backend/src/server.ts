@@ -17,8 +17,8 @@ async function autoClockOut() {
     {
       where: {
         date: today,
-        clockIn: { [Op.ne]: null },
-        clockOut: null,
+        clockIn: { [Op.ne]: null } as any,
+        clockOut: null as any,
       },
     }
   );

@@ -38,7 +38,7 @@ router.post("/", authorize("outreach:write"), async (req: AuthRequest, res: Resp
   try {
     const campaign = await Campaign.create({
       ...req.body,
-      createdById: req.user!.id,
+      createdById: req.user!.userId,
     });
     res.status(201).json(campaign);
   } catch (error: any) {
@@ -59,7 +59,7 @@ router.post("/templates", authorize("outreach:write"), async (req: AuthRequest, 
   try {
     const template = await CampaignTemplate.create({
       ...req.body,
-      createdById: req.user!.id,
+      createdById: req.user!.userId,
     });
     res.status(201).json(template);
   } catch (error: any) {
@@ -114,14 +114,14 @@ router.get("/cron/run", async (req, res) => {
         where: {
           campaignId: campaign.id,
           status: "Enrolled",
-          aiDraft: { [Op.or]: [null, ""] },
+          aiDraft: { [Op.or]: [null, ""] } as any,
         },
         limit: 10,
       });
 
       for (const lead of enrolledLeads) {
         try {
-          const draft = await generateAIEmailDraft(lead, campaign.template);
+          const draft = await generateAIEmailDraft(lead, (campaign as any).template);
           await lead.update({
             aiDraft: draft.body,
             status: "Interested",
@@ -160,7 +160,7 @@ router.get("/cron/run", async (req, res) => {
           where: {
             campaignId: campaign.id,
             status: "Interested",
-            aiDraft: { [Op.ne]: null },
+            aiDraft: { [Op.ne]: null } as any,
           },
           limit: Math.min(20, remainingDailyQuota),
         });
