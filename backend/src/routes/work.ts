@@ -218,15 +218,17 @@ router.post("/requests/convert-to-tasks", async (req: AuthRequest, res: Response
     }
 
     const createdTasks = await Promise.all(
-      requests.map((request) =>
-        Task.create({
+      requests.map(async (request) => {
+        const task = await Task.create({
           title: request.title,
           description: request.description || undefined,
           projectId: request.projectId || undefined,
           createdById: request.createdById,
           status: "Pending",
-        })
-      )
+        });
+        await request.update({ convertedTaskId: task.id, status: "In review" });
+        return task;
+      })
     );
 
     res.status(201).json(createdTasks);

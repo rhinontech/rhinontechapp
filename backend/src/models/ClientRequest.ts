@@ -15,12 +15,13 @@ interface ClientRequestAttributes {
   projectId?: string;
   reportedBy?: string;
   createdById: string;
+  convertedTaskId?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 interface ClientRequestCreationAttributes
-  extends Optional<ClientRequestAttributes, "id" | "type" | "status" | "priority" | "projectId" | "reportedBy"> {}
+  extends Optional<ClientRequestAttributes, "id" | "type" | "status" | "priority" | "projectId" | "reportedBy" | "convertedTaskId"> {}
 
 export class ClientRequest
   extends Model<ClientRequestAttributes, ClientRequestCreationAttributes>
@@ -35,6 +36,7 @@ export class ClientRequest
   declare projectId?: string;
   declare reportedBy?: string;
   declare createdById: string;
+  declare convertedTaskId?: string;
   declare createdAt: Date;
   declare updatedAt: Date;
 }
@@ -62,6 +64,7 @@ ClientRequest.init(
     projectId: { type: DataTypes.UUID, allowNull: true },
     reportedBy: { type: DataTypes.STRING, allowNull: true },
     createdById: { type: DataTypes.UUID, allowNull: false },
+    convertedTaskId: { type: DataTypes.UUID, allowNull: true },
   },
   { sequelize, tableName: "client_requests", timestamps: true }
 );

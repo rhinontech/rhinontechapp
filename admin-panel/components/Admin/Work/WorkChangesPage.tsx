@@ -1,11 +1,12 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import { SubNavToggle } from "@/components/Admin/Common/CollapsibleSubNav/CollapsibleSubNav";
 import { useSideNav } from "@/context/SideNavContext";
 import { cn } from "@/lib/utils";
 import { apiFetch } from "@/lib/api";
-import { TbLayoutSidebarFilled, TbLayoutSidebarRightFilled, TbPlus, TbCheck, TbExternalLink } from "react-icons/tb";
+import { TbLayoutSidebarFilled, TbLayoutSidebarRightFilled, TbPlus, TbCheck, TbExternalLink, TbCheckbox } from "react-icons/tb";
 
 type RequestType = "Bug" | "Change request";
 type RequestStatus = "Open" | "In review" | "In progress" | "Done";
@@ -32,6 +33,7 @@ interface WorkRequest {
   priority: RequestPriority;
   reportedBy: string | null;
   projectId: string;
+  convertedTaskId: string | null;
   project: {
     id: string;
     name: string;
@@ -67,6 +69,7 @@ const priorityStyles: Record<RequestPriority, string> = {
 
 export function WorkChangesPage() {
   const { isExpanded: isSubNavExpanded } = useSideNav();
+  const pathname = usePathname();
   const [projects, setProjects] = useState<ProjectOption[]>([]);
   const [employees, setEmployees] = useState<EmployeeOption[]>([]);
   const [requests, setRequests] = useState<WorkRequest[]>([]);
@@ -94,7 +97,7 @@ export function WorkChangesPage() {
         fullName: employee.fullName,
         companyEmail: employee.companyEmail,
       })));
-      setRequests(requestsData.map((item) => ({ ...item, projectId: item.project?.id ?? "" })));
+      setRequests(requestsData.map((item) => ({ ...item, projectId: item.project?.id ?? "", convertedTaskId: item.convertedTaskId ?? null })));
       setSelectedRequest((current) => {
         if (!requestsData.length) return null;
         if (current) return requestsData.find((item) => item.id === current.id) ?? requestsData[0];
@@ -107,7 +110,7 @@ export function WorkChangesPage() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [pathname]);
 
   const visibleRequests = useMemo(() => (
     requests.filter((request) => {
@@ -208,7 +211,7 @@ export function WorkChangesPage() {
       });
       setSelectedIds(new Set());
       setMode("view");
-      // Could add a success toast here
+      await fetchData();
     } catch {
       // silently fail
     } finally {
@@ -370,6 +373,7 @@ export function WorkChangesPage() {
                 }}
                 className={cn(
                   "grid min-w-[1160px] w-full cursor-pointer grid-cols-[40px_minmax(300px,1.55fr)_minmax(190px,0.95fr)_minmax(150px,0.75fr)_minmax(130px,0.65fr)_minmax(130px,0.65fr)_minmax(210px,1fr)] items-stretch border-b text-left text-sm hover:bg-stone-50",
+                  request.convertedTaskId && "bg-emerald-50/60 hover:bg-emerald-50",
                   selectedRequest?.id === request.id && "bg-blue-50 hover:bg-blue-50"
                 )}
               >
@@ -388,7 +392,15 @@ export function WorkChangesPage() {
                     onClick={(e) => e.stopPropagation()}
                   />
                 </span>
-                <span className="min-w-0 whitespace-normal break-words px-4 py-3 font-medium leading-6 text-gray-900">{request.title}</span>
+                <span className="flex min-w-0 flex-col justify-center gap-1 px-4 py-3">
+                  <span className="whitespace-normal break-words font-medium leading-6 text-gray-900">{request.title}</span>
+                  {request.convertedTaskId && (
+                    <span className="inline-flex w-fit items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                      <TbCheckbox size={10} />
+                      Task created
+                    </span>
+                  )}
+                </span>
                 <span className="min-w-0 truncate px-4 py-3 text-gray-600">{request.project?.name || "—"}</span>
                 <span className="min-w-0 px-4 py-3 text-gray-600">{request.type}</span>
                 <span className="flex min-w-0 items-center px-4 py-3">
@@ -459,6 +471,12 @@ export function WorkChangesPage() {
                     >
                       {converting ? "Creating..." : "Create Task"}
                     </button>
+                    {selectedRequest.convertedTaskId && (
+                      <div className="flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700">
+                        <TbCheckbox size={16} />
+                        Converted to task
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="flex h-full items-center justify-center text-sm text-gray-400">Select an item.</div>

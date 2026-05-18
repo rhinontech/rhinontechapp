@@ -1,7 +1,13 @@
 import { Router, Response } from "express";
 import { Op } from "sequelize";
-import { Project, Task, User } from "../models";
+import { ClientRequest, Project, Task, User } from "../models";
 import { authenticate, AuthRequest } from "../middleware/authenticate";
+
+const taskStatusToRequestStatus: Record<string, string> = {
+  Pending: "In review",
+  "In progress": "In progress",
+  Done: "Done",
+};
 
 const router = Router();
 router.use(authenticate);
@@ -99,6 +105,17 @@ router.put("/:id", async (req: AuthRequest, res: Response) => {
     });
 
     const full = await Task.findByPk(task.id, { include: taskIncludes });
+
+    if (status !== undefined) {
+      const mappedStatus = taskStatusToRequestStatus[status];
+      if (mappedStatus) {
+        await ClientRequest.update(
+          { status: mappedStatus as any },
+          { where: { convertedTaskId: task.id } }
+        );
+      }
+    }
+
     res.json(full);
   } catch (err) {
     res.status(500).json({ message: "Failed to update task" });
@@ -110,6 +127,10 @@ router.delete("/:id", async (req: AuthRequest, res: Response) => {
   try {
     const task = await Task.findByPk(req.params.id);
     if (!task) { res.status(404).json({ message: "Task not found" }); return; }
+    await ClientRequest.update(
+      { convertedTaskId: undefined, status: "Open" } as any,
+      { where: { convertedTaskId: task.id } }
+    );
     await task.destroy();
     res.json({ message: "Task deleted" });
   } catch (err) {

@@ -161,5 +161,5 @@ export {
 export async function syncDatabase(force = false) {
   // We disable 'alter' to prevent deadlocks and timeouts during startup.
   // Use migrations for schema changes instead.
-  await sequelize.sync({ force, alter: false });
+  await sequelize.sync({ force, alter: true });
 }
