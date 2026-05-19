@@ -39,16 +39,11 @@ export function OverviewPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      // Mocking some stats for now as the backend might not have an aggregation route yet
-      setStats({
-        totalLeads: 1240,
-        activeCampaigns: 4,
-        emailsSent: 450,
-        repliesReceived: 32
-      });
-
-      // Fetch actual recent activities
-      const acts = await apiFetch<Activity[]>("/outreach/activities?limit=10");
+      const [statsData, acts] = await Promise.all([
+        apiFetch<Stats>("/outreach/stats"),
+        apiFetch<Activity[]>("/outreach/activities?limit=10"),
+      ]);
+      setStats(statsData);
       setActivities(acts);
     } catch (err) {
       console.error(err);
@@ -118,19 +113,54 @@ export function OverviewPage() {
               </div>
             </div>
 
-            {/* Performance Chart Placeholder */}
-            <div className="bg-white rounded-2xl border border-stone-200 p-6 flex flex-col items-center justify-center text-center">
-              <TbTrendingUp size={64} className="text-stone-100 mb-4" />
-              <h3 className="text-lg font-bold text-stone-800">Conversion Analytics</h3>
-              <p className="text-sm text-stone-400 max-w-xs mt-2">Visualizing your reply rates and conversion funnel across campaigns.</p>
-              <div className="mt-8 w-full space-y-4">
-                <div className="h-2 bg-stone-100 rounded-full w-full overflow-hidden">
-                  <div className="h-full bg-stone-900 w-[65%]"></div>
-                </div>
-                <div className="h-2 bg-stone-100 rounded-full w-full overflow-hidden">
-                  <div className="h-full bg-stone-400 w-[40%]"></div>
-                </div>
+            {/* Conversion Analytics */}
+            <div className="bg-white rounded-2xl border border-stone-200 p-6 flex flex-col">
+              <div className="flex items-center gap-2 mb-6">
+                <TbTrendingUp className="text-stone-400" size={18} />
+                <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider">Conversion Analytics</h3>
               </div>
+              {stats && (
+                <div className="space-y-5 flex-1">
+                  {[
+                    {
+                      label: "Emails Sent",
+                      value: stats.emailsSent,
+                      total: stats.totalLeads,
+                      color: "bg-stone-900",
+                    },
+                    {
+                      label: "Reply Rate",
+                      value: stats.repliesReceived,
+                      total: stats.emailsSent || 1,
+                      color: "bg-emerald-500",
+                    },
+                    {
+                      label: "Leads Contacted",
+                      value: stats.emailsSent,
+                      total: stats.totalLeads || 1,
+                      color: "bg-blue-500",
+                    },
+                  ].map((item) => {
+                    const pct = Math.min(100, Math.round((item.value / item.total) * 100));
+                    return (
+                      <div key={item.label}>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs font-semibold text-stone-600">{item.label}</span>
+                          <span className="text-xs font-bold text-stone-900">
+                            {item.value.toLocaleString()} <span className="text-stone-400 font-normal">({pct}%)</span>
+                          </span>
+                        </div>
+                        <div className="h-2 bg-stone-100 rounded-full w-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-700 ${item.color}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>

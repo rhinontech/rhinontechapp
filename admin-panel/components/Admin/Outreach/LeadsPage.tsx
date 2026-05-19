@@ -222,8 +222,11 @@ export function LeadsPage() {
               <option value="New">New</option>
               <option value="Enriched">Enriched</option>
               <option value="Enrolled">Enrolled</option>
-              <option value="Emailed">Emailed</option>
               <option value="Interested">Interested</option>
+              <option value="Emailed">Emailed</option>
+              <option value="Replied">Replied</option>
+              <option value="Bounced">Bounced</option>
+              <option value="Unsubscribed">Unsubscribed</option>
             </select>
           </div>
 

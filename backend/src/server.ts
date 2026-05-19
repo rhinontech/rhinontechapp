@@ -2,6 +2,7 @@ import app from "./app";
 import { env } from "./config/env";
 import { sequelize } from "./config/database";
 import { syncDatabase } from "./models";
+import { Campaign } from "./models/Campaign";
 import { Attendance } from "./models/Attendance";
 import { Op } from "sequelize";
 import cron from "node-cron";
@@ -48,16 +49,34 @@ async function start() {
       }
     });
 
-    // Schedule outreach campaign engine (runs every day at 9:00 AM)
-    cron.schedule("0 9 * * *", async () => {
-      console.log("[Cron] Running outreach campaign engine...");
+    // Outreach campaign engine: check every minute, fire for campaigns whose runTime matches now
+    cron.schedule("* * * * *", async () => {
+      const now = new Date();
+      const hh = now.getHours().toString().padStart(2, "0");
+      const mm = now.getMinutes().toString().padStart(2, "0");
+      const currentTime = `${hh}:${mm}`;
+      const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const currentDay = dayNames[now.getDay()];
+
       try {
-        await axios.get(`http://localhost:${env.port}/campaigns/cron/run`, {
-          headers: { Authorization: `Bearer ${env.cronSecret}` }
+        const activeCampaigns = await Campaign.findAll({
+          where: { stage: "Active" },
+          attributes: ["id", "runTime", "scheduleDays"],
         });
-        console.log("[Cron] Outreach engine run completed successfully.");
+
+        for (const c of activeCampaigns) {
+          const runTime = c.runTime || "09:00";
+          const scheduleDays: string[] = c.scheduleDays || ["Mon","Tue","Wed","Thu","Fri"];
+          if (runTime === currentTime && scheduleDays.includes(currentDay)) {
+            console.log(`[Cron] Firing outreach engine for campaign ${c.id} at ${currentTime}`);
+            await axios.get(`http://localhost:${env.port}/campaigns/cron/run`, {
+              headers: { Authorization: `Bearer ${env.cronSecret}` },
+            });
+            break; // engine processes all active campaigns in one pass
+          }
+        }
       } catch (err: any) {
-        console.error("[Cron] Outreach engine run failed:", err.message);
+        console.error("[Cron] Outreach schedule check failed:", err.message);
       }
     });
   });

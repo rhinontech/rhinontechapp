@@ -1,5 +1,5 @@
 import { Router, Response } from "express";
-import { Lead, CampaignActivity, InboxEmail } from "../models";
+import { Lead, Campaign, CampaignActivity, InboxEmail } from "../models";
 import { authenticate, authorize, AuthRequest } from "../middleware/authenticate";
 import { sendEmail } from "../services/mailer";
 
@@ -61,6 +61,21 @@ router.post("/send", authorize("outreach:write"), async (req: AuthRequest, res: 
     });
 
     res.json({ success: true, message: "Email sent successfully" });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// GET /outreach/stats - aggregate outreach metrics
+router.get("/stats", authorize("outreach:read"), async (_req: AuthRequest, res: Response) => {
+  try {
+    const [totalLeads, activeCampaigns, emailsSent, repliesReceived] = await Promise.all([
+      Lead.count(),
+      Campaign.count({ where: { stage: "Active" } }),
+      CampaignActivity.count({ where: { type: "OutreachSent" } }),
+      CampaignActivity.count({ where: { type: "ReplyReceived" } }),
+    ]);
+    res.json({ totalLeads, activeCampaigns, emailsSent, repliesReceived });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

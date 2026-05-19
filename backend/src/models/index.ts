@@ -159,7 +159,8 @@ export {
 };
 
 export async function syncDatabase(force = false) {
-  // We disable 'alter' to prevent deadlocks and timeouts during startup.
-  // Use migrations for schema changes instead.
-  await sequelize.sync({ force, alter: true });
+  // alter: { drop: false } — adds new columns/tables but never drops constraints,
+  // avoiding the SequelizeUnknownConstraintError on PostgreSQL when FK constraints
+  // don't already exist and Sequelize tries to DROP them before re-adding.
+  await sequelize.sync({ force, alter: { drop: false } });
 }

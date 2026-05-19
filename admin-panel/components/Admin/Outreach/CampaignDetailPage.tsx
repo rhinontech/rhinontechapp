@@ -34,6 +34,8 @@ interface Campaign {
   leadsTotal: number;
   dailyLimit: number;
   startDate: string;
+  runTime: string;
+  scheduleDays: string[];
   objective: string;
   notes: string;
   template?: { name: string };
@@ -59,6 +61,10 @@ export function CampaignDetailPage({ id }: { id: string }) {
   const [running, setRunning] = useState(false);
   const [runLogs, setRunLogs] = useState<string[] | null>(null);
   const [isPreviewExpanded, setIsPreviewExpanded] = useState(true);
+  const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const [editingSettings, setEditingSettings] = useState(false);
+  const [settingsForm, setSettingsForm] = useState({ dailyLimit: 0, startDate: "", runTime: "09:00", scheduleDays: ["Mon","Tue","Wed","Thu","Fri"] as string[], objective: "", notes: "" });
+  const [savingSettings, setSavingSettings] = useState(false);
 
   const fetchCampaign = useCallback(async () => {
     try {
@@ -78,6 +84,19 @@ export function CampaignDetailPage({ id }: { id: string }) {
   useEffect(() => {
     fetchCampaign();
   }, [fetchCampaign]);
+
+  useEffect(() => {
+    if (campaign) {
+      setSettingsForm({
+        dailyLimit: campaign.dailyLimit,
+        startDate: campaign.startDate.split("T")[0],
+        runTime: campaign.runTime || "09:00",
+        scheduleDays: campaign.scheduleDays || ["Mon","Tue","Wed","Thu","Fri"],
+        objective: campaign.objective || "",
+        notes: campaign.notes || "",
+      });
+    }
+  }, [campaign]);
 
   const handleBack = () => {
     const parentPath = pathname.split("/").slice(0, -1).join("/");
@@ -107,6 +126,32 @@ export function CampaignDetailPage({ id }: { id: string }) {
       fetchCampaign();
     } catch (err) {
       alert("Update failed");
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    setSavingSettings(true);
+    try {
+      await apiFetch(`/campaigns/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(settingsForm),
+      });
+      setEditingSettings(false);
+      fetchCampaign();
+    } catch (err) {
+      alert("Save failed");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("Delete this campaign? All enrolled leads will be unenrolled.")) return;
+    try {
+      await apiFetch(`/campaigns/${id}`, { method: "DELETE" });
+      handleBack();
+    } catch (err) {
+      alert("Delete failed");
     }
   };
 
@@ -258,12 +303,177 @@ export function CampaignDetailPage({ id }: { id: string }) {
               )}
 
               {activeTab === "settings" && (
-                <div className="max-w-xl space-y-6">
-                  <div>
-                    <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-2">Campaign Objective</p>
-                    <div className="bg-stone-50 p-4 rounded-xl border border-stone-100 text-stone-700 text-sm leading-relaxed font-medium">
-                      {campaign.objective || "No objective defined."}
+                <div className="max-w-xl space-y-5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Campaign Settings</p>
+                    {!editingSettings ? (
+                      <button
+                        onClick={() => setEditingSettings(true)}
+                        className="text-xs font-semibold text-blue-600 hover:text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+                      >
+                        Edit
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => { setEditingSettings(false); if (campaign) setSettingsForm({ dailyLimit: campaign.dailyLimit, startDate: campaign.startDate.split("T")[0], runTime: campaign.runTime || "09:00", scheduleDays: campaign.scheduleDays || ["Mon","Tue","Wed","Thu","Fri"], objective: campaign.objective || "", notes: campaign.notes || "" }); }}
+                          className="text-xs font-semibold text-stone-400 hover:text-stone-600 px-3 py-1.5 rounded-lg hover:bg-stone-100 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleSaveSettings}
+                          disabled={savingSettings}
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold bg-stone-900 text-white px-3 py-1.5 rounded-lg hover:bg-stone-800 disabled:opacity-50 transition-colors"
+                        >
+                          {savingSettings ? <TbLoader className="animate-spin" size={12} /> : <TbCheck size={12} />}
+                          Save
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="bg-white rounded-xl border border-stone-200 divide-y divide-stone-100 overflow-hidden">
+                    <div className="p-4 flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-bold text-stone-700">Daily Email Limit</p>
+                        <p className="text-[10px] text-stone-400 mt-0.5">Max emails sent per day for this campaign.</p>
+                      </div>
+                      {editingSettings ? (
+                        <input
+                          type="number"
+                          min={1}
+                          value={settingsForm.dailyLimit}
+                          onChange={e => setSettingsForm(f => ({ ...f, dailyLimit: Number(e.target.value) }))}
+                          className="w-24 border border-stone-200 rounded-lg px-3 py-1.5 text-sm font-semibold text-stone-900 text-right focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      ) : (
+                        <p className="text-sm font-bold text-stone-900">{campaign.dailyLimit} / day</p>
+                      )}
                     </div>
+
+                    <div className="p-4 flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-bold text-stone-700">Start Date</p>
+                        <p className="text-[10px] text-stone-400 mt-0.5">The cron engine will not send before this date.</p>
+                      </div>
+                      {editingSettings ? (
+                        <input
+                          type="date"
+                          value={settingsForm.startDate}
+                          onChange={e => setSettingsForm(f => ({ ...f, startDate: e.target.value }))}
+                          className="border border-stone-200 rounded-lg px-3 py-1.5 text-sm font-semibold text-stone-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      ) : (
+                        <p className="text-sm font-bold text-stone-900">{new Date(campaign.startDate).toLocaleDateString()}</p>
+                      )}
+                    </div>
+
+                    <div className="p-4 flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-bold text-stone-700">Run Time</p>
+                        <p className="text-[10px] text-stone-400 mt-0.5">Daily time the outreach engine runs.</p>
+                      </div>
+                      {editingSettings ? (
+                        <input
+                          type="time"
+                          value={settingsForm.runTime}
+                          onChange={e => setSettingsForm(f => ({ ...f, runTime: e.target.value }))}
+                          className="border border-stone-200 rounded-lg px-3 py-1.5 text-sm font-semibold text-stone-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      ) : (
+                        <p className="text-sm font-bold text-stone-900">{campaign.runTime || "09:00"}</p>
+                      )}
+                    </div>
+
+                    <div className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <p className="text-xs font-bold text-stone-700">Active Days</p>
+                          <p className="text-[10px] text-stone-400 mt-0.5">Cron only sends on selected days.</p>
+                        </div>
+                      </div>
+                      {editingSettings ? (
+                        <div className="flex gap-1.5 flex-wrap">
+                          {DAYS.map((day) => {
+                            const active = settingsForm.scheduleDays.includes(day);
+                            return (
+                              <button
+                                key={day}
+                                type="button"
+                                onClick={() => setSettingsForm(f => ({
+                                  ...f,
+                                  scheduleDays: active
+                                    ? f.scheduleDays.filter(d => d !== day)
+                                    : [...f.scheduleDays, day],
+                                }))}
+                                className={cn(
+                                  "px-3 py-1 rounded-lg text-xs font-bold border transition-colors",
+                                  active
+                                    ? "bg-stone-900 text-white border-stone-900"
+                                    : "bg-white text-stone-400 border-stone-200 hover:border-stone-400"
+                                )}
+                              >
+                                {day}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="flex gap-1.5 flex-wrap">
+                          {DAYS.map((day) => (
+                            <span key={day} className={cn(
+                              "px-3 py-1 rounded-lg text-xs font-bold border",
+                              (campaign.scheduleDays || []).includes(day)
+                                ? "bg-stone-900 text-white border-stone-900"
+                                : "bg-stone-50 text-stone-300 border-stone-100"
+                            )}>{day}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="p-4">
+                      <p className="text-xs font-bold text-stone-700 mb-2">Objective</p>
+                      {editingSettings ? (
+                        <textarea
+                          rows={3}
+                          value={settingsForm.objective}
+                          onChange={e => setSettingsForm(f => ({ ...f, objective: e.target.value }))}
+                          placeholder="Describe the campaign goal..."
+                          className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                        />
+                      ) : (
+                        <p className="text-sm text-stone-600 leading-relaxed">{campaign.objective || <span className="italic text-stone-300">No objective defined.</span>}</p>
+                      )}
+                    </div>
+
+                    <div className="p-4">
+                      <p className="text-xs font-bold text-stone-700 mb-2">Notes</p>
+                      {editingSettings ? (
+                        <textarea
+                          rows={3}
+                          value={settingsForm.notes}
+                          onChange={e => setSettingsForm(f => ({ ...f, notes: e.target.value }))}
+                          placeholder="Internal notes about this campaign..."
+                          className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                        />
+                      ) : (
+                        <p className="text-sm text-stone-600 leading-relaxed">{campaign.notes || <span className="italic text-stone-300">No notes.</span>}</p>
+                      )}
+                    </div>
+
+                    {campaign.template && (
+                      <div className="p-4 flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-bold text-stone-700">Template</p>
+                          <p className="text-[10px] text-stone-400 mt-0.5">Email template used for AI draft generation.</p>
+                        </div>
+                        <span className="text-xs font-semibold text-stone-600 bg-stone-100 border border-stone-200 px-2.5 py-1 rounded-lg">
+                          {campaign.template.name}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -308,7 +518,7 @@ export function CampaignDetailPage({ id }: { id: string }) {
                         <TbPlayerPlay /> Activate
                       </button>
                     )}
-                    <button className="p-2 text-stone-400 hover:text-red-600 border border-stone-200 rounded-lg">
+                    <button onClick={handleDelete} className="p-2 text-stone-400 hover:text-red-600 border border-stone-200 rounded-lg transition-colors">
                       <TbTrash size={18} />
                     </button>
                   </div>
@@ -319,7 +529,21 @@ export function CampaignDetailPage({ id }: { id: string }) {
                   <div className="space-y-3 mt-3">
                     <DetailItem label="Daily Limit" value={`${campaign.dailyLimit} emails/day`} />
                     <DetailItem label="Start Date" value={new Date(campaign.startDate).toLocaleDateString()} />
+                    <DetailItem label="Run Time" value={campaign.runTime || "09:00"} />
                     <DetailItem label="Template" value={campaign.template?.name || "None"} />
+                  </div>
+                  <div className="mt-3">
+                    <p className="text-xs text-gray-400 mb-1.5">Active Days</p>
+                    <div className="flex gap-1 flex-wrap">
+                      {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d => (
+                        <span key={d} className={cn(
+                          "px-2 py-0.5 rounded text-[10px] font-bold border",
+                          (campaign.scheduleDays || []).includes(d)
+                            ? "bg-stone-900 text-white border-stone-900"
+                            : "bg-stone-50 text-stone-300 border-stone-100"
+                        )}>{d}</span>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>

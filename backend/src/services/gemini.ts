@@ -15,7 +15,7 @@ Target Market: SaaS companies, high-growth agencies, and data-driven enterprises
 Value Proposition: "Unlock the power of your data to drive smarter, reactive decisions."
 `;
 
-export async function generateAIEmailDraft(leadData: any, templateData: any = null, customPrompt: string = "") {
+export async function generateAIEmailDraft(leadData: any, templateData: any = null, customPrompt: string = "", senderName: string = "Rhinon Professional") {
   let prompt = `
     You are an expert sales copywriter for Rhinon Tech. 
 
@@ -62,7 +62,7 @@ export async function generateAIEmailDraft(leadData: any, templateData: any = nu
        - {{lead.name}} -> ${leadData.name}
        - {{lead.company}} -> ${leadData.company}
        - {{lead.title}} -> ${leadData.title || "colleague"}
-       - {{sender.name}} -> Rhinon Professional
+       - {{sender.name}} -> ${senderName}
     
     OUTPUT:
     Return a JSON object with:
@@ -86,6 +86,43 @@ export async function generateAIEmailDraft(leadData: any, templateData: any = nu
   }
 
   return { body: text, subject: `Scaling ${leadData.company}'s operations` };
+}
+
+export async function generateTemplateWithAI(prompt: string) {
+  const fullPrompt = `
+    You are an expert sales copywriter for Rhinon Tech, a high-end data automation and business intelligence platform.
+
+    RHINON COMPANY KNOWLEDGE:
+    ${RHINON_KNOWLEDGE}
+
+    USER REQUEST:
+    ${prompt}
+
+    TASK:
+    Create a reusable cold outreach email template based on the request above.
+    Use placeholders like {{lead.name}}, {{lead.company}}, {{lead.title}} wherever personalization makes sense.
+
+    Return ONLY a JSON object with:
+    - "name": A short descriptive template name (e.g. "SaaS Founder Intro")
+    - "subject": A compelling subject line (may include {{lead.company}})
+    - "body": The full email body with placeholders
+    - "aiInstructions": Brief guidance for the AI on how to personalize this when sending (2-3 sentences)
+
+    Do not include any surrounding text. Only return valid JSON.
+  `;
+
+  const result = await model.generateContent(fullPrompt);
+  const response = await result.response;
+  const text = response.text().trim();
+
+  try {
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) return JSON.parse(jsonMatch[0]);
+  } catch (e) {
+    console.error("Failed to parse AI template JSON:", text);
+  }
+
+  return { error: "Failed to generate template" };
 }
 
 export async function enrichLeadWithAI(leadName: string, companyName: string) {

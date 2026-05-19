@@ -15,7 +15,8 @@ const sesFromEmail = process.env.AWS_SES_FROM_EMAIL || process.env.GMAIL_USER ||
 const smtpUser = process.env.GMAIL_USER || process.env.SMTP_USER;
 const smtpPass = process.env.GMAIL_APP_PASSWORD || process.env.SMTP_PASSWORD;
 
-const hasSesConfig = Boolean(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && sesRegion && sesFromEmail);
+// Require explicit AWS_SES_FROM_EMAIL to opt into SES — prevents S3-only AWS credentials from hijacking email
+const hasSesConfig = Boolean(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && sesRegion && process.env.AWS_SES_FROM_EMAIL);
 const hasGmailConfig = Boolean(smtpUser && smtpPass);
 
 const sesClient = hasSesConfig ? new SESv2Client({ region: sesRegion }) : null;

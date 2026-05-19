@@ -2,6 +2,7 @@ import { Router, Response } from "express";
 import { Lead, Campaign, CampaignActivity } from "../models";
 import { authenticate, authorize, AuthRequest } from "../middleware/authenticate";
 import { enrichLeadWithAI } from "../services/gemini";
+import { Op } from "sequelize";
 
 const router = Router();
 
@@ -14,6 +15,13 @@ router.get("/", authorize("outreach:read"), async (req: AuthRequest, res: Respon
 
   if (status) where.status = status;
   if (campaignId) where.campaignId = campaignId;
+  if (search) {
+    where[Op.or] = [
+      { name: { [Op.iLike]: `%${search}%` } },
+      { company: { [Op.iLike]: `%${search}%` } },
+      { email: { [Op.iLike]: `%${search}%` } },
+    ];
+  }
 
   const leads = await Lead.findAll({
     where,
