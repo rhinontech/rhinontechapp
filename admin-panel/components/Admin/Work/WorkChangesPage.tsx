@@ -76,7 +76,7 @@ function daysOpen(createdAt?: string): number {
 }
 
 function ls<T>(key: string, fallback: T): T {
-  try { const v = localStorage.getItem(key); return v !== null ? (JSON.parse(v) as T) : fallback; } catch { return fallback; }
+  try { if (typeof window === "undefined") return fallback; const v = localStorage.getItem(key); return v !== null ? (JSON.parse(v) as T) : fallback; } catch { return fallback; }
 }
 
 export function WorkChangesPage() {

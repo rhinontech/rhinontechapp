@@ -132,14 +132,14 @@ export function TasksPage({ scope, currentUserId }: { scope: TaskScope; currentU
   const [viewMode, setViewMode] = useState<"list" | "kanban">(() => ls("work_viewMode", "list") as "list" | "kanban");
   const [kanbanGrouping, setKanbanGrouping] = useState<KanbanGrouping>("status");
   const [wipLimits, setWipLimits] = useState<Record<string, number>>(() => {
-    try { return JSON.parse(localStorage.getItem("work_wipLimits") || "{}"); } catch { return {}; }
+    try { return typeof window === "undefined" ? {} : JSON.parse(localStorage.getItem("work_wipLimits") || "{}"); } catch { return {}; }
   });
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkStatus, setBulkStatus] = useState<TaskStatus | "">("");
   const [bulkAssignee, setBulkAssignee] = useState("");
   const [bulkPriority, setBulkPriority] = useState<TaskPriority | "">("");
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>(() => {
-    try { return JSON.parse(localStorage.getItem("work_savedFilters") || "[]"); } catch { return []; }
+    try { return typeof window === "undefined" ? [] : JSON.parse(localStorage.getItem("work_savedFilters") || "[]"); } catch { return []; }
   });
   const [saveFilterName, setSaveFilterName] = useState("");
   const [showSaveFilter, setShowSaveFilter] = useState(false);
