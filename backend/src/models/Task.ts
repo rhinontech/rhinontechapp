@@ -2,6 +2,8 @@ import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../config/database";
 
 export type TaskStatus = "Pending" | "In progress" | "Done";
+export type TaskPriority = "Low" | "Medium" | "High";
+export type TaskRecurrence = "Daily" | "Weekly" | "Monthly";
 
 interface TaskAttributes {
   id: string;
@@ -13,17 +15,18 @@ interface TaskAttributes {
   team?: string;
   dueDate?: Date;
   status: TaskStatus;
+  priority: TaskPriority;
+  estimatedHours?: number | null;
+  recurrence?: TaskRecurrence | null;
+  blockedById?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 interface TaskCreationAttributes
-  extends Optional<TaskAttributes, "id" | "description" | "assigneeId" | "projectId" | "team" | "dueDate" | "status"> {}
+  extends Optional<TaskAttributes, "id" | "description" | "assigneeId" | "projectId" | "team" | "dueDate" | "status" | "priority" | "estimatedHours" | "recurrence" | "blockedById"> {}
 
-export class Task
-  extends Model<TaskAttributes, TaskCreationAttributes>
-  implements TaskAttributes
-{
+export class Task extends Model<TaskAttributes, TaskCreationAttributes> implements TaskAttributes {
   declare id: string;
   declare title: string;
   declare description?: string;
@@ -33,6 +36,10 @@ export class Task
   declare team?: string;
   declare dueDate?: Date;
   declare status: TaskStatus;
+  declare priority: TaskPriority;
+  declare estimatedHours: number | null;
+  declare recurrence: TaskRecurrence | null;
+  declare blockedById: string | null;
   declare createdAt: Date;
   declare updatedAt: Date;
 }
@@ -48,6 +55,10 @@ Task.init(
     team: { type: DataTypes.STRING, allowNull: true },
     dueDate: { type: DataTypes.DATEONLY, allowNull: true },
     status: { type: DataTypes.ENUM("Pending", "In progress", "Done"), defaultValue: "Pending" },
+    priority: { type: DataTypes.ENUM("Low", "Medium", "High"), defaultValue: "Medium", allowNull: false },
+    estimatedHours: { type: DataTypes.FLOAT, allowNull: true },
+    recurrence: { type: DataTypes.ENUM("Daily", "Weekly", "Monthly"), allowNull: true },
+    blockedById: { type: DataTypes.UUID, allowNull: true },
   },
   { sequelize, tableName: "tasks", timestamps: true }
 );

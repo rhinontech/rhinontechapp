@@ -24,6 +24,9 @@ import { ReviewGoal } from "./ReviewGoal";
 import { ReviewSubmission } from "./ReviewSubmission";
 import { Document } from "./Document";
 import { LinkedInToken } from "./LinkedInToken";
+import { Subtask } from "./Subtask";
+import { TaskComment } from "./TaskComment";
+import { TaskTag } from "./TaskTag";
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/database";
 
@@ -63,6 +66,24 @@ Task.belongsTo(User, { foreignKey: "assigneeId", as: "assignee" });
 Task.belongsTo(User, { foreignKey: "createdById", as: "creator" });
 User.hasMany(Task, { foreignKey: "assigneeId", as: "assignedTasks" });
 User.hasMany(Task, { foreignKey: "createdById", as: "createdTasks" });
+
+// Task self-referencing for blockedById
+Task.belongsTo(Task, { foreignKey: "blockedById", as: "blocker" });
+Task.hasMany(Task, { foreignKey: "blockedById", as: "blockedTasks" });
+
+// Subtasks
+Subtask.belongsTo(Task, { foreignKey: "taskId", as: "task" });
+Task.hasMany(Subtask, { foreignKey: "taskId", as: "subtasks", onDelete: "CASCADE" });
+
+// Task Comments
+TaskComment.belongsTo(Task, { foreignKey: "taskId", as: "task" });
+Task.hasMany(TaskComment, { foreignKey: "taskId", as: "comments", onDelete: "CASCADE" });
+TaskComment.belongsTo(User, { foreignKey: "userId", as: "author" });
+User.hasMany(TaskComment, { foreignKey: "userId", as: "taskComments" });
+
+// Task Tags
+TaskTag.belongsTo(Task, { foreignKey: "taskId", as: "task" });
+Task.hasMany(TaskTag, { foreignKey: "taskId", as: "tags", onDelete: "CASCADE" });
 
 // Work projects and client requests
 Project.belongsTo(User, { foreignKey: "createdById", as: "creator" });
@@ -158,6 +179,9 @@ export {
   ReviewSubmission,
   Document,
   LinkedInToken,
+  Subtask,
+  TaskComment,
+  TaskTag,
 };
 
 export async function syncDatabase(force = false) {

@@ -6,7 +6,7 @@ import { SubNavToggle } from "@/components/Admin/Common/CollapsibleSubNav/Collap
 import { useSideNav } from "@/context/SideNavContext";
 import { cn } from "@/lib/utils";
 import { apiFetch } from "@/lib/api";
-import { TbLayoutSidebarFilled, TbLayoutSidebarRightFilled, TbPlus, TbCheck, TbExternalLink, TbCheckbox } from "react-icons/tb";
+import { TbLayoutSidebarFilled, TbLayoutSidebarRightFilled, TbPlus, TbCheck, TbExternalLink, TbCheckbox, TbAlertTriangle } from "react-icons/tb";
 
 type RequestType = "Bug" | "Change request";
 type RequestStatus = "Open" | "In review" | "In progress" | "Done";
@@ -34,6 +34,7 @@ interface WorkRequest {
   reportedBy: string | null;
   projectId: string;
   convertedTaskId: string | null;
+  createdAt?: string;
   project: {
     id: string;
     name: string;
@@ -67,6 +68,17 @@ const priorityStyles: Record<RequestPriority, string> = {
   High: "border-red-100 bg-red-50 text-red-700",
 };
 
+const SLA_THRESHOLDS: Record<RequestPriority, number> = { High: 1, Medium: 3, Low: 7 };
+
+function daysOpen(createdAt?: string): number {
+  if (!createdAt) return 0;
+  return Math.floor((Date.now() - new Date(createdAt).getTime()) / 86_400_000);
+}
+
+function ls<T>(key: string, fallback: T): T {
+  try { const v = localStorage.getItem(key); return v !== null ? (JSON.parse(v) as T) : fallback; } catch { return fallback; }
+}
+
 export function WorkChangesPage() {
   const { isExpanded: isSubNavExpanded } = useSideNav();
   const pathname = usePathname();
@@ -74,15 +86,19 @@ export function WorkChangesPage() {
   const [employees, setEmployees] = useState<EmployeeOption[]>([]);
   const [requests, setRequests] = useState<WorkRequest[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<WorkRequest | null>(null);
-  const [projectFilter, setProjectFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState<RequestStatus | "All">("All");
-  const [typeFilter, setTypeFilter] = useState<RequestType | "All">("All");
+  const [projectFilter, setProjectFilter] = useState<string>(() => ls("changes_projectFilter", "all"));
+  const [statusFilter, setStatusFilter] = useState<RequestStatus | "All">(() => ls("changes_statusFilter", "All" as RequestStatus | "All"));
+  const [typeFilter, setTypeFilter] = useState<RequestType | "All">(() => ls("changes_typeFilter", "All" as RequestType | "All"));
   const [isPreviewExpanded, setIsPreviewExpanded] = useState(true);
   const [mode, setMode] = useState<PanelMode>("view");
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [converting, setConverting] = useState(false);
+
+  useEffect(() => { try { localStorage.setItem("changes_projectFilter", JSON.stringify(projectFilter)); } catch {} }, [projectFilter]);
+  useEffect(() => { try { localStorage.setItem("changes_statusFilter", JSON.stringify(statusFilter)); } catch {} }, [statusFilter]);
+  useEffect(() => { try { localStorage.setItem("changes_typeFilter", JSON.stringify(typeFilter)); } catch {} }, [typeFilter]);
 
   const fetchData = async () => {
     try {
@@ -112,13 +128,16 @@ export function WorkChangesPage() {
     fetchData();
   }, [pathname]);
 
+  const PRIORITY_ORDER: Record<RequestPriority, number> = { High: 0, Medium: 1, Low: 2 };
   const visibleRequests = useMemo(() => (
-    requests.filter((request) => {
-      const matchesProject = projectFilter === "all" || request.project?.id === projectFilter;
-      const matchesStatus = statusFilter === "All" || request.status === statusFilter;
-      const matchesType = typeFilter === "All" || request.type === typeFilter;
-      return matchesProject && matchesStatus && matchesType;
-    })
+    requests
+      .filter((request) => {
+        const matchesProject = projectFilter === "all" || request.project?.id === projectFilter;
+        const matchesStatus = statusFilter === "All" || request.status === statusFilter;
+        const matchesType = typeFilter === "All" || request.type === typeFilter;
+        return matchesProject && matchesStatus && matchesType;
+      })
+      .sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority])
   ), [projectFilter, requests, statusFilter, typeFilter]);
 
   const startCreate = () => {
@@ -394,12 +413,25 @@ export function WorkChangesPage() {
                 </span>
                 <span className="flex min-w-0 flex-col justify-center gap-1 px-4 py-3">
                   <span className="whitespace-normal break-words font-medium leading-6 text-gray-900">{request.title}</span>
-                  {request.convertedTaskId && (
-                    <span className="inline-flex w-fit items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
-                      <TbCheckbox size={10} />
-                      Task created
-                    </span>
-                  )}
+                  <span className="flex flex-wrap gap-1">
+                    {request.convertedTaskId && (
+                      <span className="inline-flex w-fit items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                        <TbCheckbox size={10} />
+                        Task created
+                      </span>
+                    )}
+                    {request.status !== "Done" && (() => {
+                      const days = daysOpen(request.createdAt);
+                      const threshold = SLA_THRESHOLDS[request.priority];
+                      if (days >= threshold) return (
+                        <span className="inline-flex w-fit items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-700">
+                          <TbAlertTriangle size={10} />
+                          {days}d open
+                        </span>
+                      );
+                      return null;
+                    })()}
+                  </span>
                 </span>
                 <span className="min-w-0 truncate px-4 py-3 text-gray-600">{request.project?.name || "—"}</span>
                 <span className="min-w-0 px-4 py-3 text-gray-600">{request.type}</span>

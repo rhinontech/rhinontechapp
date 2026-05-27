@@ -279,7 +279,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-12 gap-4">
 
             {/* Today's Attendance */}
-            <div className="col-span-7 rounded-xl border border-gray-100 bg-white overflow-hidden">
+            <div className="col-span-12 rounded-xl border border-gray-100 bg-white overflow-hidden">
               <SectionTitle icon={<TbClock size={16} />} title={isSuperadmin ? "Team Attendance" : "Today's Attendance"} />
               <div className="p-5">
                 {isSuperadmin ? (
@@ -395,26 +395,6 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Upcoming Holidays */}
-            <div className="col-span-5 rounded-xl border border-gray-100 bg-white overflow-hidden">
-              <SectionTitle icon={<TbCalendarEvent size={16} />} title="Upcoming Holidays" />
-              <div className="divide-y divide-gray-50">
-                {[
-                  { month: "May", day: 27, name: "Bakrid (Eid al-Adha)", type: "Floating Holiday" },
-                  { month: "Jun", day: 17, name: "Bakrid (observed)", type: "Public Holiday" },
-                  { month: "Jun", day: 28, name: "Rath Yatra", type: "Regional Holiday" },
-                ].map((h) => (
-                  <div key={h.name} className="flex items-center gap-3 px-5 py-3.5">
-                    <DayBadge day={h.day} />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-gray-800 truncate">{h.name}</p>
-                      <p className="text-xs text-gray-400">{h.month} {h.day}</p>
-                    </div>
-                    <span className="shrink-0 rounded-md bg-stone-100 px-2 py-0.5 text-xs text-gray-500">{h.type}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
 
           {/* ── Row 3: Birthdays, Anniversaries, Recent Hires ── */}
