@@ -19,6 +19,9 @@ import {
   TbTrash,
   TbSearch,
   TbX,
+  TbBrandLinkedin,
+  TbLink,
+  TbUnlink,
 } from "react-icons/tb";
 import { cn } from "@/lib/utils";
 import { apiFetch } from "@/lib/api";
@@ -28,10 +31,15 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useSideNav } from "@/context/SideNavContext";
 
 type CampaignStage = "Draft" | "Active" | "Paused" | "Completed";
+type CampaignChannel = "Email" | "Cold Email" | "LinkedIn DM" | "LinkedIn Connection" | "LinkedIn Post" | "LinkedIn Video" | "LinkedIn Article";
+
+const SOCIAL_CHANNELS: CampaignChannel[] = ["LinkedIn Post", "LinkedIn Video", "LinkedIn Article", "LinkedIn DM", "LinkedIn Connection"];
+const isSocialChannel = (ch?: string) => ch ? SOCIAL_CHANNELS.includes(ch as CampaignChannel) : false;
 
 interface Campaign {
   id: string;
   name: string;
+  channel: CampaignChannel;
   stage: CampaignStage;
   leadsProcessed: number;
   leadsTotal: number;
@@ -42,11 +50,13 @@ interface Campaign {
   objective?: string;
   templateId?: string;
   template?: { name: string };
+  platformPostId?: string;
 }
 
 interface Template {
   id: string;
   name: string;
+  channel?: string;
 }
 
 interface Lead {
@@ -88,8 +98,12 @@ export function CampaignsPage() {
 
   const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
+  const [linkedinStatus, setLinkedinStatus] = useState<{ connected: boolean; isExpired?: boolean; profile?: any } | null>(null);
+  const [connectingLinkedIn, setConnectingLinkedIn] = useState(false);
+
   const [form, setForm] = useState({
     name: "",
+    channel: "Email" as CampaignChannel,
     templateId: "",
     dailyLimit: 50,
     startDate: new Date().toISOString().split("T")[0],
@@ -120,6 +134,7 @@ export function CampaignsPage() {
   useEffect(() => {
     fetchCampaigns();
     apiFetch<Template[]>("/campaigns/templates").then(setTemplates).catch(() => {});
+    apiFetch<any>("/linkedin/status").then(setLinkedinStatus).catch(() => {});
   }, [fetchCampaigns]);
 
   const openAddPanel = () => {
@@ -132,6 +147,7 @@ export function CampaignsPage() {
     setCreatedCampaignId(null);
     setForm({
       name: "",
+      channel: "Email",
       templateId: "",
       dailyLimit: 50,
       startDate: new Date().toISOString().split("T")[0],
@@ -150,10 +166,18 @@ export function CampaignsPage() {
         body: JSON.stringify(form),
       });
       setCreatedCampaignId(campaign.id);
-      // Load leads for enrollment step
-      const leads = await apiFetch<Lead[]>("/leads");
-      setAllLeads(leads);
-      setCreateStep("leads");
+
+      if (isSocialChannel(form.channel)) {
+        // Social campaigns don't have lead enrollment — finish immediately
+        setShowAddPanel(false);
+        setCreatedCampaignId(null);
+        fetchCampaigns();
+      } else {
+        // Load leads for enrollment step
+        const leads = await apiFetch<Lead[]>("/leads");
+        setAllLeads(leads);
+        setCreateStep("leads");
+      }
     } catch (err: any) {
       alert(err.message);
     } finally {
@@ -216,6 +240,28 @@ export function CampaignsPage() {
     }
   };
 
+  const handleConnectLinkedIn = async () => {
+    setConnectingLinkedIn(true);
+    try {
+      const data = await apiFetch<{ authUrl: string }>("/linkedin/auth");
+      if (data.authUrl) window.location.href = data.authUrl;
+    } catch (err: any) {
+      alert("Failed to start LinkedIn auth: " + err.message);
+    } finally {
+      setConnectingLinkedIn(false);
+    }
+  };
+
+  const handleDisconnectLinkedIn = async () => {
+    if (!confirm("Disconnect LinkedIn?")) return;
+    try {
+      await apiFetch("/linkedin/disconnect", { method: "POST" });
+      setLinkedinStatus({ connected: false });
+    } catch (err: any) {
+      alert("Failed to disconnect: " + err.message);
+    }
+  };
+
   const filteredLeads = allLeads.filter(
     (l) =>
       l.name.toLowerCase().includes(leadSearch.toLowerCase()) ||
@@ -254,7 +300,45 @@ export function CampaignsPage() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-auto p-4">
+        <div className="flex-1 overflow-auto p-4 space-y-4">
+          {/* LinkedIn Connection Widget */}
+          {linkedinStatus !== null && (
+            <div className={cn(
+              "flex items-center justify-between rounded-xl border px-4 py-3 text-sm",
+              linkedinStatus.connected && !linkedinStatus.isExpired
+                ? "bg-emerald-50 border-emerald-100 text-emerald-800"
+                : "bg-stone-50 border-stone-200 text-stone-500"
+            )}>
+              <div className="flex items-center gap-3">
+                <TbBrandLinkedin size={20} className={linkedinStatus.connected && !linkedinStatus.isExpired ? "text-emerald-600" : "text-stone-400"} />
+                <div>
+                  <p className="font-semibold text-xs">
+                    {linkedinStatus.connected && !linkedinStatus.isExpired
+                      ? `LinkedIn connected${linkedinStatus.profile?.name ? ` · ${linkedinStatus.profile.name}` : ""}`
+                      : linkedinStatus.isExpired
+                      ? "LinkedIn token expired — please reconnect"
+                      : "LinkedIn not connected"}
+                  </p>
+                  <p className="text-[10px] opacity-60 font-medium">
+                    {linkedinStatus.connected && !linkedinStatus.isExpired
+                      ? "Ready for automated LinkedIn campaigns"
+                      : "Connect to enable LinkedIn Post, Article & DM campaigns"}
+                  </p>
+                </div>
+              </div>
+              {linkedinStatus.connected && !linkedinStatus.isExpired ? (
+                <button onClick={handleDisconnectLinkedIn} className="text-[10px] font-bold uppercase tracking-widest text-stone-400 hover:text-red-600 flex items-center gap-1">
+                  <TbUnlink size={12} /> Disconnect
+                </button>
+              ) : (
+                <button onClick={handleConnectLinkedIn} disabled={connectingLinkedIn} className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-50">
+                  {connectingLinkedIn ? <TbLoader className="animate-spin" size={12} /> : <TbLink size={12} />}
+                  Connect LinkedIn
+                </button>
+              )}
+            </div>
+          )}
+
           <div className="overflow-auto rounded-xl border border-gray-100 bg-white">
             <div className="grid min-w-[800px] w-full grid-cols-[minmax(250px,1.5fr)_minmax(120px,0.8fr)_minmax(150px,1fr)_80px] border-b bg-stone-100 text-xs font-semibold uppercase tracking-wide text-gray-500">
               <span className="px-4 py-3">Campaign</span>
@@ -285,8 +369,9 @@ export function CampaignsPage() {
                   <span className="px-4 py-3">
                     <div className="flex flex-col">
                       <span className="font-bold text-stone-900">{campaign.name}</span>
-                      <span className="text-xs text-stone-500">
-                        Starts {new Date(campaign.startDate).toLocaleDateString()}
+                      <span className="text-xs text-stone-500 flex items-center gap-1.5">
+                        {isSocialChannel(campaign.channel) && <TbBrandLinkedin size={11} className="text-blue-500" />}
+                        {campaign.channel || "Email"} · Starts {new Date(campaign.startDate).toLocaleDateString()}
                       </span>
                     </div>
                   </span>
@@ -381,9 +466,36 @@ export function CampaignsPage() {
                       label="Campaign Name"
                       value={form.name}
                       onChange={(e) => setForm({ ...form, name: e })}
-                      placeholder="e.g. Q4 Outreach"
+                      placeholder="e.g. Q4 LinkedIn Outreach"
                       required
                     />
+
+                    <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+                      Channel
+                      <select
+                        value={form.channel}
+                        onChange={(e) => setForm({ ...form, channel: e.target.value as CampaignChannel, templateId: "" })}
+                        className="w-full px-3 py-2 rounded-lg border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm"
+                      >
+                        <optgroup label="Email">
+                          <option value="Email">Email</option>
+                          <option value="Cold Email">Cold Email</option>
+                        </optgroup>
+                        <optgroup label="LinkedIn">
+                          <option value="LinkedIn Post">LinkedIn Post</option>
+                          <option value="LinkedIn Article">LinkedIn Article</option>
+                          <option value="LinkedIn Video">LinkedIn Video</option>
+                          <option value="LinkedIn DM">LinkedIn DM</option>
+                          <option value="LinkedIn Connection">LinkedIn Connection</option>
+                        </optgroup>
+                      </select>
+                    </label>
+
+                    {isSocialChannel(form.channel) && linkedinStatus && !linkedinStatus.connected && (
+                      <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-700 font-medium">
+                        LinkedIn is not connected. <button type="button" onClick={handleConnectLinkedIn} className="underline font-bold">Connect now</button> to publish social campaigns.
+                      </div>
+                    )}
 
                     <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
                       Template
@@ -394,12 +506,23 @@ export function CampaignsPage() {
                         className="w-full px-3 py-2 rounded-lg border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm"
                       >
                         <option value="">Select a template...</option>
-                        {templates.map((t) => (
-                          <option key={t.id} value={t.id}>
-                            {t.name}
-                          </option>
-                        ))}
+                        {templates
+                          .filter(t => {
+                            if (!t.channel) return true;
+                            if (isSocialChannel(form.channel)) return isSocialChannel(t.channel);
+                            return !isSocialChannel(t.channel);
+                          })
+                          .map((t) => (
+                            <option key={t.id} value={t.id}>
+                              {t.name}
+                            </option>
+                          ))}
                       </select>
+                      {templates.filter(t => isSocialChannel(form.channel) ? isSocialChannel(t.channel || "") : !isSocialChannel(t.channel || "")).length === 0 && (
+                        <p className="text-[10px] text-amber-600 font-medium mt-0.5">
+                          No {isSocialChannel(form.channel) ? "LinkedIn" : "email"} templates found. Create one in Templates first.
+                        </p>
+                      )}
                     </label>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -485,7 +608,7 @@ export function CampaignsPage() {
                         disabled={saving}
                         className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-800 disabled:opacity-60 transition-colors"
                       >
-                        {saving ? "Creating..." : "Next: Add Leads →"}
+                        {saving ? "Creating..." : isSocialChannel(form.channel) ? "Create Campaign" : "Next: Add Leads →"}
                       </button>
                     </div>
                   </form>

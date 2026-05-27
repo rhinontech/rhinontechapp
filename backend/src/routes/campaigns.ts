@@ -2,7 +2,8 @@ import { Router, Response } from "express";
 import { Campaign, CampaignTemplate, Lead, CampaignActivity, User, InboxEmail } from "../models";
 import { authenticate, authorize, AuthRequest } from "../middleware/authenticate";
 import { env } from "../config/env";
-import { generateAIEmailDraft, generateTemplateWithAI } from "../services/gemini";
+import { generateAIEmailDraft, generateAISocialDraft, generateTemplateWithAI } from "../services/gemini";
+import { postToLinkedIn } from "../services/linkedin";
 import { sendEmail } from "../services/mailer";
 import { Op } from "sequelize";
 
@@ -131,7 +132,7 @@ function fillPlaceholders(text: string, lead: any, senderName: string): string {
     .replace(/\[AI to fill[^\]]*\]/gi, "");
 }
 
-function toEmailHtml(plainText: string): string {
+function toEmailHtml(plainText: string, imageUrl?: string): string {
   const escaped = plainText
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -140,6 +141,9 @@ function toEmailHtml(plainText: string): string {
     .split(/\n\n+/)
     .map(p => `<p style="margin:0 0 16px 0;line-height:1.6">${p.replace(/\n/g, "<br>")}</p>`)
     .join("");
+  const imageBlock = imageUrl
+    ? `<tr><td style="padding:0 0 0 0"><img src="${imageUrl}" alt="" width="600" style="display:block;width:100%;max-width:600px;height:auto" /></td></tr>`
+    : "";
   return `<!DOCTYPE html>
 <html><head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
@@ -149,6 +153,7 @@ function toEmailHtml(plainText: string): string {
         <tr><td style="background:#0f0f0f;padding:24px 32px">
           <span style="color:#ffffff;font-size:18px;font-weight:700;letter-spacing:-0.3px">Rhinon Tech</span>
         </td></tr>
+        ${imageBlock}
         <tr><td style="padding:32px;color:#1a1a1a;font-size:15px">
           ${paragraphs}
         </td></tr>
@@ -160,6 +165,180 @@ function toEmailHtml(plainText: string): string {
   </table>
 </body></html>`;
 }
+
+// POST /campaigns/:id/process — generate AI draft (email or social)
+router.post("/:id/process", authorize("outreach:write"), async (req: AuthRequest, res: Response) => {
+  try {
+    const campaign = await Campaign.findByPk(req.params.id, {
+      include: [{ model: CampaignTemplate, as: "template" }],
+    });
+    if (!campaign) {
+      res.status(404).json({ message: "Campaign not found" });
+      return;
+    }
+
+    const isEmail = campaign.channel === "Email" || campaign.channel === "Cold Email";
+
+    if (isEmail) {
+      const leads = await Lead.findAll({
+        where: { campaignId: campaign.id, status: ["Enrolled", "New"] },
+      });
+
+      const senderName = req.user!.fullName || "Rhinon Team";
+      let processedCount = 0;
+
+      for (const lead of leads) {
+        try {
+          const draft = await generateAIEmailDraft(lead, (campaign as any).template, "", senderName);
+          await lead.update({ aiDraft: fillPlaceholders(draft.body, lead, senderName), status: "Interested" });
+          await CampaignActivity.create({
+            leadId: lead.id,
+            campaignId: campaign.id,
+            type: "DraftGenerated",
+            content: "AI personalized outreach draft generated for this campaign.",
+            generatedContent: draft.body,
+          });
+          processedCount++;
+        } catch (err: any) {
+          console.error(`Draft error for lead ${lead.id}:`, err.message);
+        }
+      }
+
+      await campaign.increment("leadsProcessed", { by: processedCount });
+      res.json({ success: true, processed: processedCount, total: leads.length });
+    } else {
+      // Social / LinkedIn channel
+      try {
+        const draft = await generateAISocialDraft((campaign as any).template);
+        const updates: any = { aiDraft: draft };
+        if ((campaign as any).template?.imageUrl) updates.mediaUrl = (campaign as any).template.imageUrl;
+        await campaign.update(updates);
+        res.json({ success: true, processed: 1, total: 1, message: "Social draft generated successfully." });
+      } catch (err: any) {
+        res.status(500).json({ message: "Failed to generate social draft.", details: err.message });
+      }
+    }
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// POST /campaigns/:id/send — send email campaign or publish LinkedIn post
+router.post("/:id/send", authorize("outreach:write"), async (req: AuthRequest, res: Response) => {
+  try {
+    const campaign = await Campaign.findByPk(req.params.id, {
+      include: [{ model: CampaignTemplate, as: "template" }],
+    });
+    if (!campaign) {
+      res.status(404).json({ message: "Campaign not found" });
+      return;
+    }
+
+    const isEmail = campaign.channel === "Email" || campaign.channel === "Cold Email";
+
+    if (isEmail) {
+      const leads = await Lead.findAll({
+        where: { campaignId: campaign.id, status: "Interested" },
+      });
+
+      const senderName = req.user!.fullName || "Rhinon Team";
+      const fromEmail = process.env.GMAIL_USER || process.env.SMTP_FROM_EMAIL || "admin@rhinontech.in";
+      let sentCount = 0;
+
+      for (const lead of leads) {
+        try {
+          if (!lead.aiDraft) continue;
+          const tmpl = (campaign as any).template;
+          const subject = tmpl?.subject
+            ? fillPlaceholders(tmpl.subject, lead, senderName)
+            : `Optimizing ${lead.company}'s potential`;
+          const htmlBody = toEmailHtml(lead.aiDraft, tmpl?.imageUrl);
+          await sendEmail({ to: lead.email, from: fromEmail, subject, html: htmlBody, text: lead.aiDraft });
+
+          await InboxEmail.create({
+            threadKey: `outreach-${campaign.id}-${lead.id}`,
+            folder: "sent",
+            fromName: senderName,
+            fromEmail,
+            toEmails: [lead.email],
+            subject,
+            body: lead.aiDraft,
+            snippet: lead.aiDraft.slice(0, 160),
+            ownerEmail: fromEmail,
+            isRead: true,
+            sentAt: new Date(),
+          });
+
+          await lead.update({ status: "Emailed" });
+          await CampaignActivity.create({
+            leadId: lead.id,
+            campaignId: campaign.id,
+            type: "OutreachSent",
+            content: "Campaign outreach email delivered via Rhinon Engine.",
+          });
+          sentCount++;
+        } catch (err: any) {
+          console.error(`Send error for lead ${lead.id}:`, err.message);
+        }
+      }
+
+      if (campaign.leadsProcessed < campaign.leadsTotal) {
+        await campaign.increment("leadsProcessed", { by: sentCount });
+      }
+
+      res.json({ success: true, sent: sentCount, total: leads.length });
+    } else {
+      // Social / LinkedIn broadcast
+      let postContent = campaign.aiDraft;
+      let mediaUrl = campaign.mediaUrl;
+
+      if (!postContent) {
+        const tmpl = (campaign as any).template;
+        if (tmpl) {
+          postContent = postContent || tmpl.body;
+          mediaUrl = mediaUrl || tmpl.imageUrl;
+        }
+      }
+
+      if (!postContent) {
+        res.status(400).json({ message: "No AI draft or template content found for this social post." });
+        return;
+      }
+
+      // Auto-generate slug for LinkedIn Articles
+      let slug = campaign.slug;
+      if (!slug && campaign.channel === "LinkedIn Article") {
+        slug = campaign.name
+          .toLowerCase()
+          .trim()
+          .replace(/[^\w\s-]/g, "")
+          .replace(/[\s_-]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+      }
+
+      try {
+        const result = await postToLinkedIn(postContent, mediaUrl ? [mediaUrl] : [], {
+          visibility: campaign.visibility || "PUBLIC",
+          channel: campaign.channel,
+          articleUrl: campaign.articleUrl || undefined,
+          mediaTitle: campaign.name || campaign.mediaTitle || undefined,
+          mediaDescription: campaign.mediaDescription || undefined,
+          campaignId: campaign.id,
+          slug: slug || undefined,
+          userName: req.user!.fullName || "Prabhat Patra",
+          organizationId: campaign.organizationId || null,
+        });
+
+        await campaign.update({ platformPostId: result.postId, stage: "Completed", slug: slug || campaign.slug });
+        res.json({ success: true, sent: 1, total: 1, message: "Social post successfully published to LinkedIn." });
+      } catch (err: any) {
+        res.status(500).json({ message: "Failed to publish social post.", details: err.message });
+      }
+    }
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
 // CRON ENGINE: GET /campaigns/cron/run
 router.get("/cron/run", async (req, res) => {
@@ -258,7 +437,7 @@ router.get("/cron/run", async (req, res) => {
             const subject = tmpl?.subject
               ? tmpl.subject.replace(/\{\{lead\.name\}\}/g, lead.name).replace(/\{\{lead\.company\}\}/g, lead.company)
               : `Optimizing ${lead.company}'s potential`;
-            const htmlBody = toEmailHtml(lead.aiDraft);
+            const htmlBody = toEmailHtml(lead.aiDraft, tmpl?.imageUrl);
             await sendEmail({
               to: lead.email,
               from: fromEmail,
@@ -301,18 +480,7 @@ router.get("/cron/run", async (req, res) => {
         }
       }
 
-      // PHASE C: Auto-Completion Check
-      const pendingLeads = await Lead.count({
-        where: {
-          campaignId: campaign.id,
-          status: { [Op.in]: ["New", "Enrolled", "Enriched", "Interested"] },
-        },
-      });
-
-      if (pendingLeads === 0 && campaign.leadsTotal > 0) {
-        await campaign.update({ stage: "Completed" });
-        logs.push(`Campaign finished! Marked as Completed.`);
-      }
+      logs.push(`   [Done] Campaign cycle complete. Staying Active for future runs.`);
     }
 
     res.json({ success: true, logs });
@@ -348,6 +516,25 @@ router.put("/:id", authorize("outreach:write"), async (req: AuthRequest, res: Re
   }
 });
 
+// POST /campaigns/:id/reset - reset campaign to Active and re-enroll leads (for testing)
+router.post("/:id/reset", authorize("outreach:write"), async (req: AuthRequest, res: Response) => {
+  try {
+    const campaign = await Campaign.findByPk(req.params.id);
+    if (!campaign) {
+      res.status(404).json({ message: "Campaign not found" });
+      return;
+    }
+    await campaign.update({ stage: "Active" });
+    await Lead.update(
+      { status: "Enrolled", aiDraft: undefined },
+      { where: { campaignId: campaign.id } }
+    );
+    res.json({ message: `Campaign "${campaign.name}" reset to Active. Leads re-enrolled.` });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // DELETE /campaigns/:id - delete campaign and unenroll its leads
 router.delete("/:id", authorize("outreach:write"), async (req: AuthRequest, res: Response) => {
   try {
@@ -367,13 +554,13 @@ router.delete("/:id", authorize("outreach:write"), async (req: AuthRequest, res:
 
 // POST /campaigns/templates/generate - AI-generate a template from a prompt
 router.post("/templates/generate", authorize("outreach:write"), async (req: AuthRequest, res: Response) => {
-  const { prompt } = req.body;
+  const { prompt, channel } = req.body;
   if (!prompt || !prompt.trim()) {
     res.status(400).json({ message: "prompt is required" });
     return;
   }
   try {
-    const result = await generateTemplateWithAI(prompt.trim());
+    const result = await generateTemplateWithAI(prompt.trim(), channel || "Email");
     if (result.error) {
       res.status(500).json({ message: result.error });
       return;

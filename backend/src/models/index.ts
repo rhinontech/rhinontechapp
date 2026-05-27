@@ -23,6 +23,7 @@ import { ReviewCycle } from "./ReviewCycle";
 import { ReviewGoal } from "./ReviewGoal";
 import { ReviewSubmission } from "./ReviewSubmission";
 import { Document } from "./Document";
+import { LinkedInToken } from "./LinkedInToken";
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/database";
 
@@ -156,6 +157,7 @@ export {
   ReviewGoal,
   ReviewSubmission,
   Document,
+  LinkedInToken,
 };
 
 export async function syncDatabase(force = false) {

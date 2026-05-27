@@ -21,6 +21,8 @@ import outreachRoutes from "./routes/outreach";
 import leaveRoutes from "./routes/leave";
 import performanceRoutes from "./routes/performance";
 import documentsRoutes from "./routes/documents";
+import linkedinRoutes from "./routes/linkedin";
+import aiRoutes from "./routes/ai";
 
 const app = express();
 
@@ -30,7 +32,7 @@ const allowedOrigins = [
   "http://localhost:3000",
 ].filter(Boolean);
 app.use(cors({ origin: (origin, cb) => cb(null, !origin || allowedOrigins.includes(origin)), credentials: true }));
-app.use(express.json());
+app.use(express.json({ limit: "20mb" }));
 
 app.use("/auth", authRoutes);
 app.use("/roles", rolesRoutes);
@@ -50,6 +52,8 @@ app.use("/outreach", outreachRoutes);
 app.use("/leave", leaveRoutes);
 app.use("/performance", performanceRoutes);
 app.use("/documents", documentsRoutes);
+app.use("/linkedin", linkedinRoutes);
+app.use("/ai", aiRoutes);
 
 // Use text parser for SNS webhooks since AWS SNS sends content-type text/plain
 app.use("/webhooks", express.text({ type: ["application/json", "text/plain"] }), webhooksRoutes);

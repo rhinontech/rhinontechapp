@@ -17,7 +17,17 @@ import {
   TbX,
   TbCalendar,
   TbLayoutSidebarFilled,
-  TbLayoutSidebarRightFilled
+  TbLayoutSidebarRightFilled,
+  TbBrandLinkedin,
+  TbSend,
+  TbSparkles,
+  TbHeart,
+  TbMessageCircle,
+  TbShare,
+  TbEye,
+  TbPhoto,
+  TbPhotoPlus,
+  TbPhotoX,
 } from "react-icons/tb";
 import { cn } from "@/lib/utils";
 import { apiFetch } from "@/lib/api";
@@ -26,9 +36,12 @@ import { usePathname, useRouter } from "next/navigation";
 import { SubNavToggle } from "@/components/Admin/Common/CollapsibleSubNav/CollapsibleSubNav";
 import { useSideNav } from "@/context/SideNavContext";
 
+type CampaignChannel = "Email" | "Cold Email" | "LinkedIn DM" | "LinkedIn Connection" | "LinkedIn Post" | "LinkedIn Video" | "LinkedIn Article";
+
 interface Campaign {
   id: string;
   name: string;
+  channel: CampaignChannel;
   stage: "Draft" | "Active" | "Paused" | "Completed";
   leadsProcessed: number;
   leadsTotal: number;
@@ -38,6 +51,15 @@ interface Campaign {
   scheduleDays: string[];
   objective: string;
   notes: string;
+  aiDraft?: string;
+  mediaUrl?: string;
+  visibility?: "PUBLIC" | "CONNECTIONS";
+  mediaTitle?: string;
+  mediaDescription?: string;
+  articleUrl?: string;
+  platformPostId?: string;
+  organizationId?: string | null;
+  socialStats?: { likes: number; comments: number; shares: number; impressions: number; lastUpdated?: string };
   template?: { name: string };
   leads?: any[];
   activities?: any[];
@@ -57,7 +79,7 @@ export function CampaignDetailPage({ id }: { id: string }) {
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"leads" | "activity" | "settings">("leads");
+  const [activeTab, setActiveTab] = useState<"leads" | "activity" | "settings" | "social">("leads");
   const [running, setRunning] = useState(false);
   const [runLogs, setRunLogs] = useState<string[] | null>(null);
   const [isPreviewExpanded, setIsPreviewExpanded] = useState(true);
@@ -65,6 +87,14 @@ export function CampaignDetailPage({ id }: { id: string }) {
   const [editingSettings, setEditingSettings] = useState(false);
   const [settingsForm, setSettingsForm] = useState({ dailyLimit: 0, startDate: "", runTime: "09:00", scheduleDays: ["Mon","Tue","Wed","Thu","Fri"] as string[], objective: "", notes: "" });
   const [savingSettings, setSavingSettings] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [socialStats, setSocialStats] = useState<Campaign["socialStats"] | null>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [imagePrompt, setImagePrompt] = useState("");
+  const [generatingImage, setGeneratingImage] = useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [savingImage, setSavingImage] = useState(false);
 
   const fetchCampaign = useCallback(async () => {
     try {
@@ -74,6 +104,7 @@ export function CampaignDetailPage({ id }: { id: string }) {
       ]);
       setCampaign(data);
       setLeads(campaignLeads);
+      if (isSocialChannel(data.channel)) setActiveTab("social");
     } catch (err) {
       console.error(err);
     } finally {
@@ -145,6 +176,16 @@ export function CampaignDetailPage({ id }: { id: string }) {
     }
   };
 
+  const handleReset = async () => {
+    if (!confirm("Reset this campaign to Active? All leads will be re-enrolled and AI drafts cleared.")) return;
+    try {
+      await apiFetch(`/campaigns/${id}/reset`, { method: "POST" });
+      fetchCampaign();
+    } catch (err) {
+      alert("Reset failed");
+    }
+  };
+
   const handleDelete = async () => {
     if (!confirm("Delete this campaign? All enrolled leads will be unenrolled.")) return;
     try {
@@ -152,6 +193,79 @@ export function CampaignDetailPage({ id }: { id: string }) {
       handleBack();
     } catch (err) {
       alert("Delete failed");
+    }
+  };
+
+  const isSocialChannel = (channel?: CampaignChannel) =>
+    channel && ["LinkedIn Post", "LinkedIn Video", "LinkedIn Article", "LinkedIn DM", "LinkedIn Connection"].includes(channel);
+
+  const handleGenerateDraft = async () => {
+    setGenerating(true);
+    try {
+      await apiFetch(`/campaigns/${id}/process`, { method: "POST" });
+      fetchCampaign();
+    } catch (err: any) {
+      alert("Draft generation failed: " + err.message);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handlePublish = async () => {
+    if (!confirm("Publish this post to LinkedIn now?")) return;
+    setPublishing(true);
+    try {
+      await apiFetch(`/campaigns/${id}/send`, { method: "POST" });
+      fetchCampaign();
+      alert("Successfully published to LinkedIn!");
+    } catch (err: any) {
+      alert("Publish failed: " + err.message);
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const handleGenerateImage = async () => {
+    if (!imagePrompt.trim()) return;
+    setGeneratingImage(true);
+    try {
+      const result = await apiFetch<{ url: string }>("/ai/images/generate", {
+        method: "POST",
+        body: JSON.stringify({ prompt: imagePrompt }),
+      });
+      setPreviewImageUrl(result.url);
+    } catch (err: any) {
+      alert("Image generation failed: " + err.message);
+    } finally {
+      setGeneratingImage(false);
+    }
+  };
+
+  const handleAttachImage = async () => {
+    if (!previewImageUrl) return;
+    setSavingImage(true);
+    try {
+      await apiFetch(`/campaigns/${id}`, {
+        method: "PUT",
+        body: JSON.stringify({ mediaUrl: previewImageUrl }),
+      });
+      fetchCampaign();
+    } catch (err: any) {
+      alert("Failed to attach image: " + err.message);
+    } finally {
+      setSavingImage(false);
+    }
+  };
+
+  const handleFetchStats = async () => {
+    setLoadingStats(true);
+    try {
+      const stats = await apiFetch<Campaign["socialStats"]>(`/linkedin/campaigns/${id}/stats`);
+      setSocialStats(stats);
+    } catch (err: any) {
+      alert("Failed to fetch stats: " + err.message);
+    } finally {
+      setLoadingStats(false);
     }
   };
 
@@ -222,7 +336,8 @@ export function CampaignDetailPage({ id }: { id: string }) {
           <div className="bg-white rounded-xl border border-stone-200 shadow-sm flex flex-col overflow-hidden flex-1">
             <div className="flex border-b border-stone-100 bg-stone-50/30">
               {[
-                { id: "leads", label: "Enrolled Leads", icon: <TbUsers /> },
+                ...(!isSocialChannel(campaign.channel) ? [{ id: "leads", label: "Enrolled Leads", icon: <TbUsers /> }] : []),
+                ...(isSocialChannel(campaign.channel) ? [{ id: "social", label: "Social Draft", icon: <TbBrandLinkedin /> }] : []),
                 { id: "activity", label: "Execution Log", icon: <TbActivity /> },
                 { id: "settings", label: "Campaign Settings", icon: <TbSettings /> },
               ].map(tab => (
@@ -278,6 +393,153 @@ export function CampaignDetailPage({ id }: { id: string }) {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              )}
+
+              {activeTab === "social" && (
+                <div className="space-y-4">
+
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
+                      {campaign.channel} — Content Draft
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleGenerateDraft}
+                        disabled={generating}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-50"
+                      >
+                        {generating ? <TbLoader className="animate-spin" size={14} /> : <TbSparkles size={14} />}
+                        Generate Draft
+                      </button>
+                      <button
+                        onClick={handlePublish}
+                        disabled={publishing || !campaign.aiDraft || campaign.stage === "Completed"}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        {publishing ? <TbLoader className="animate-spin" size={14} /> : <TbBrandLinkedin size={14} />}
+                        Publish to LinkedIn
+                      </button>
+                    </div>
+                  </div>
+
+                  {campaign.aiDraft ? (
+                    <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
+                      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-3">Post Content Preview</p>
+                      <p className="text-sm text-stone-700 whitespace-pre-wrap leading-relaxed">{campaign.aiDraft}</p>
+                    </div>
+                  ) : (
+                    <div className="py-16 text-center text-stone-400 border border-dashed border-stone-200 rounded-xl">
+                      <TbBrandLinkedin size={48} className="mx-auto mb-4 opacity-10" />
+                      <p className="text-sm font-medium">No AI draft yet.</p>
+                      <p className="text-xs mt-1 text-stone-300">Click "Generate Draft" to create content with AI.</p>
+                    </div>
+                  )}
+
+                  {/* AI Image Generator */}
+                  <div className="rounded-xl border border-stone-200 bg-white p-4 space-y-3">
+                    <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Post Image</p>
+                    {campaign.mediaUrl ? (
+                      <div className="relative group">
+                        <img src={campaign.mediaUrl} alt="Campaign media" className="w-full rounded-lg object-cover max-h-48" />
+                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={async () => {
+                              await apiFetch(`/campaigns/${id}`, { method: "PUT", body: JSON.stringify({ mediaUrl: null }) });
+                              fetchCampaign();
+                            }}
+                            className="bg-white border border-stone-200 p-1.5 rounded-lg text-red-500 hover:bg-red-50 shadow"
+                          >
+                            <TbPhotoX size={14} />
+                          </button>
+                        </div>
+                        <p className="text-[10px] text-stone-400 mt-2 font-medium">Image attached — will be included when publishing.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={imagePrompt}
+                            onChange={e => setImagePrompt(e.target.value)}
+                            placeholder="Describe the image to generate..."
+                            className="flex-1 border border-stone-200 rounded-lg px-3 py-2 text-xs text-stone-900 placeholder-stone-300 focus:outline-none focus:ring-2 focus:ring-violet-400"
+                            onKeyDown={e => e.key === "Enter" && handleGenerateImage()}
+                          />
+                          <button
+                            onClick={handleGenerateImage}
+                            disabled={generatingImage || !imagePrompt.trim()}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-2 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-50 whitespace-nowrap"
+                          >
+                            {generatingImage ? <TbLoader className="animate-spin" size={13} /> : <TbPhotoPlus size={13} />}
+                            Generate
+                          </button>
+                        </div>
+                        {previewImageUrl && (
+                          <div className="space-y-2">
+                            <img src={previewImageUrl} alt="Generated preview" className="w-full rounded-lg object-cover max-h-48" />
+                            <div className="flex gap-2">
+                              <button
+                                onClick={handleAttachImage}
+                                disabled={savingImage}
+                                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-stone-900 px-3 py-2 text-xs font-semibold text-white hover:bg-stone-800 disabled:opacity-50"
+                              >
+                                {savingImage ? <TbLoader className="animate-spin" size={13} /> : <TbCheck size={13} />}
+                                Attach to Campaign
+                              </button>
+                              <button
+                                onClick={() => setPreviewImageUrl(null)}
+                                className="px-3 py-2 rounded-lg border border-stone-200 text-xs font-semibold text-stone-400 hover:text-red-500 hover:border-red-200"
+                              >
+                                <TbX size={13} />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                        {!previewImageUrl && (
+                          <div className="flex items-center justify-center py-6 border border-dashed border-stone-200 rounded-lg">
+                            <div className="text-center text-stone-300">
+                              <TbPhoto size={28} className="mx-auto mb-1" />
+                              <p className="text-[10px]">Optional image for your post</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {campaign.platformPostId && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Live Stats</p>
+                        <button
+                          onClick={handleFetchStats}
+                          disabled={loadingStats}
+                          className="text-[10px] font-bold text-blue-600 hover:text-blue-700 uppercase tracking-widest flex items-center gap-1"
+                        >
+                          {loadingStats ? <TbLoader className="animate-spin" size={12} /> : <TbRefresh size={12} />}
+                          Refresh
+                        </button>
+                      </div>
+                      {(socialStats || campaign.socialStats) && (
+                        <div className="grid grid-cols-4 gap-2">
+                          {[
+                            { icon: <TbHeart />, label: "Likes", value: (socialStats || campaign.socialStats)?.likes ?? 0, color: "text-red-500" },
+                            { icon: <TbMessageCircle />, label: "Comments", value: (socialStats || campaign.socialStats)?.comments ?? 0, color: "text-blue-500" },
+                            { icon: <TbShare />, label: "Shares", value: (socialStats || campaign.socialStats)?.shares ?? 0, color: "text-green-500" },
+                            { icon: <TbEye />, label: "Impressions", value: (socialStats || campaign.socialStats)?.impressions ?? 0, color: "text-violet-500" },
+                          ].map((s, i) => (
+                            <div key={i} className="bg-white border border-stone-100 rounded-xl p-3 text-center">
+                              <div className={cn("text-xl mx-auto mb-1", s.color)}>{s.icon}</div>
+                              <p className="text-lg font-bold text-stone-900">{s.value}</p>
+                              <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest">{s.label}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-[10px] text-stone-400 font-mono">Post ID: {campaign.platformPostId}</p>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -513,6 +775,10 @@ export function CampaignDetailPage({ id }: { id: string }) {
                       <button onClick={() => updateStage("Paused")} className="flex-1 bg-yellow-50 text-yellow-600 border border-yellow-200 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2">
                         <TbPlayerPause /> Pause
                       </button>
+                    ) : campaign.stage === "Completed" ? (
+                      <button onClick={handleReset} className="flex-1 bg-blue-50 text-blue-600 border border-blue-200 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2">
+                        <TbRefresh /> Reset & Retest
+                      </button>
                     ) : (
                       <button onClick={() => updateStage("Active")} className="flex-1 bg-green-50 text-green-600 border border-green-200 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2">
                         <TbPlayerPlay /> Activate
@@ -522,15 +788,23 @@ export function CampaignDetailPage({ id }: { id: string }) {
                       <TbTrash size={18} />
                     </button>
                   </div>
+                  <button
+                    onClick={handleReset}
+                    className="w-full mt-2 flex items-center justify-center gap-2 border border-dashed border-stone-300 text-stone-400 hover:text-blue-600 hover:border-blue-300 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-colors"
+                  >
+                    <TbRefresh size={12} /> Reset for Testing
+                  </button>
                 </div>
 
                 <div className="rounded-lg border border-gray-100 p-3">
                   <p className="text-xs text-gray-400 mb-1">Details</p>
                   <div className="space-y-3 mt-3">
-                    <DetailItem label="Daily Limit" value={`${campaign.dailyLimit} emails/day`} />
+                    <DetailItem label="Channel" value={campaign.channel || "Email"} />
+                    {!isSocialChannel(campaign.channel) && <DetailItem label="Daily Limit" value={`${campaign.dailyLimit} emails/day`} />}
                     <DetailItem label="Start Date" value={new Date(campaign.startDate).toLocaleDateString()} />
-                    <DetailItem label="Run Time" value={campaign.runTime || "09:00"} />
+                    {!isSocialChannel(campaign.channel) && <DetailItem label="Run Time" value={campaign.runTime || "09:00"} />}
                     <DetailItem label="Template" value={campaign.template?.name || "None"} />
+                    {campaign.platformPostId && <DetailItem label="Published" value="Yes — Live on LinkedIn" />}
                   </div>
                   <div className="mt-3">
                     <p className="text-xs text-gray-400 mb-1.5">Active Days</p>

@@ -88,25 +88,47 @@ export async function generateAIEmailDraft(leadData: any, templateData: any = nu
   return { body: text, subject: `Scaling ${leadData.company}'s operations` };
 }
 
-export async function generateTemplateWithAI(prompt: string) {
-  const fullPrompt = `
+export async function generateTemplateWithAI(prompt: string, channel = "Email") {
+  const isSocial = ["LinkedIn Post", "LinkedIn Video", "LinkedIn Article", "LinkedIn DM", "LinkedIn Connection"].includes(channel);
+
+  const fullPrompt = isSocial
+    ? `
+    You are an expert social media content strategist for Rhinon Tech.
+
+    RHINON COMPANY KNOWLEDGE:
+    ${RHINON_KNOWLEDGE}
+
+    CHANNEL: ${channel}
+    USER REQUEST: ${prompt}
+
+    TASK:
+    Create a reusable ${channel} content template. The "body" is the seed content / writing guide for the AI.
+    The AI will expand/rewrite the body into a final polished post when a campaign is executed.
+
+    Return ONLY a JSON object with:
+    - "name": Short descriptive template name (e.g. "Data Automation Thought Leadership")
+    - "body": Seed content, key talking points, or a draft post (no placeholders needed for social)
+    - "aiInstructions": 2-3 sentences telling the AI the tone, style, hashtags to include, and any channel-specific tips for ${channel}
+
+    Do not include any surrounding text. Only return valid JSON.
+  `
+    : `
     You are an expert sales copywriter for Rhinon Tech, a high-end data automation and business intelligence platform.
 
     RHINON COMPANY KNOWLEDGE:
     ${RHINON_KNOWLEDGE}
 
-    USER REQUEST:
-    ${prompt}
+    USER REQUEST: ${prompt}
 
     TASK:
-    Create a reusable cold outreach email template based on the request above.
+    Create a reusable cold outreach email template.
     Use placeholders like {{lead.name}}, {{lead.company}}, {{lead.title}} wherever personalization makes sense.
 
     Return ONLY a JSON object with:
-    - "name": A short descriptive template name (e.g. "SaaS Founder Intro")
+    - "name": Short descriptive template name (e.g. "SaaS Founder Intro")
     - "subject": A compelling subject line (may include {{lead.company}})
     - "body": The full email body with placeholders
-    - "aiInstructions": Brief guidance for the AI on how to personalize this when sending (2-3 sentences)
+    - "aiInstructions": 2-3 sentences guiding the AI on how to personalize this when sending
 
     Do not include any surrounding text. Only return valid JSON.
   `;
@@ -123,6 +145,46 @@ export async function generateTemplateWithAI(prompt: string) {
   }
 
   return { error: "Failed to generate template" };
+}
+
+export async function generateImagePromptForCampaign(campaignName: string, channel: string, draft: string): Promise<string> {
+  const prompt = `
+    You are a visual art director for Rhinon Tech, a premium data automation company.
+
+    Campaign: "${campaignName}" (${channel})
+    Post content summary: ${draft.slice(0, 300)}
+
+    Generate a concise, vivid image generation prompt (under 80 words) for a professional LinkedIn post image.
+    Style: clean, modern, tech-forward, dark background with cyan/blue accents, no text in image.
+    Return ONLY the image prompt text, nothing else.
+  `;
+
+  const result = await model.generateContent(prompt);
+  return result.response.text().trim();
+}
+
+export async function generateAISocialDraft(templateData: any = null): Promise<string> {
+  const prompt = `
+    You are an expert LinkedIn content creator for Rhinon Tech.
+
+    RHINON COMPANY KNOWLEDGE:
+    ${RHINON_KNOWLEDGE}
+
+    ${templateData ? `TEMPLATE GUIDANCE:\n${templateData.body}\nAI Instructions: ${templateData.aiInstructions || "None"}` : ""}
+
+    TASK:
+    Write a compelling LinkedIn post for Rhinon Tech.
+    - Professional yet engaging tone
+    - 150-300 words
+    - Include relevant hashtags at the end
+    - No markdown formatting (plain text only)
+
+    Return only the post text, no JSON, no labels.
+  `;
+
+  const result = await model.generateContent(prompt);
+  const response = await result.response;
+  return response.text().trim();
 }
 
 export async function enrichLeadWithAI(leadName: string, companyName: string) {
