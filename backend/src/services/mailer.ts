@@ -14,6 +14,7 @@ const sesRegion = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION;
 const sesFromEmail = process.env.AWS_SES_FROM_EMAIL || process.env.GMAIL_USER || process.env.SMTP_FROM_EMAIL;
 const smtpUser = process.env.GMAIL_USER || process.env.SMTP_USER;
 const smtpPass = process.env.GMAIL_APP_PASSWORD || process.env.SMTP_PASSWORD;
+const fromName = process.env.MAIL_FROM_NAME || "Rhinon Labs";
 
 // Require explicit AWS_SES_FROM_EMAIL to opt into SES — prevents S3-only AWS credentials from hijacking email
 const hasSesConfig = Boolean(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && sesRegion && process.env.AWS_SES_FROM_EMAIL);
@@ -51,7 +52,7 @@ export async function sendEmail({
 
   if (sesClient) {
     await sesClient.send(new SendEmailCommand({
-      FromEmailAddress: fromAddress,
+      FromEmailAddress: `"${fromName}" <${fromAddress}>`,
       Destination: {
         ToAddresses: toAddresses,
         CcAddresses: cc,
@@ -71,7 +72,7 @@ export async function sendEmail({
 
   if (smtpTransporter) {
     await smtpTransporter.sendMail({
-      from: `"Rhinon Tech" <${fromAddress}>`,
+      from: `"${fromName}" <${fromAddress}>`,
       to: toAddresses.join(", "),
       cc: cc.length ? cc.join(", ") : undefined,
       subject,

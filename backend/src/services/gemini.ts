@@ -1,19 +1,33 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import axios from "axios";
 import { env } from "../config/env";
+import { getSalesMemory } from "../config/salesMemory";
 
 const genAI = new GoogleGenerativeAI(env.geminiApiKey || "");
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-export const RHINON_KNOWLEDGE = `
-Rhinon Tech is a high-end data automation and business intelligence platform.
-Core Services:
-1. Custom Business Intelligence Dashboards: Centralizing KPIs from sales, marketing, and operations into one view.
-2. Data Automation: Eliminating manual reporting and data entry.
-3. Operational Efficiency: Using internal data to find bottlenecks and improve decision-making.
-4. Custom Tools: Tailored web applications that solve specific internal operational problems.
-Target Market: SaaS companies, high-growth agencies, and data-driven enterprises.
-Value Proposition: "Unlock the power of your data to drive smarter, reactive decisions."
-`;
+const GEMINI_REST = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+
+// Generate text grounded in live Google Search. Falls back to the plain model on failure.
+async function generateGroundedContent(prompt: string): Promise<string> {
+  try {
+    const res = await axios.post(
+      `${GEMINI_REST}?key=${env.geminiApiKey}`,
+      { contents: [{ parts: [{ text: prompt }] }], tools: [{ google_search: {} }] },
+      { timeout: 30000, headers: { "Content-Type": "application/json" } }
+    );
+    const parts = res.data?.candidates?.[0]?.content?.parts || [];
+    const text = parts.map((p: any) => p.text || "").join("").trim();
+    if (text) return text;
+  } catch {
+    /* fall through to non-grounded */
+  }
+  const r = await model.generateContent(prompt);
+  return (await r.response).text();
+}
+
+// Backwards-compatible alias: the agent's knowledge now comes from the editable sales memory.
+export const RHINON_KNOWLEDGE = getSalesMemory();
 
 export async function generateAIEmailDraft(leadData: any, templateData: any = null, customPrompt: string = "", senderName: string = "Rhinon Professional") {
   let prompt = `
@@ -187,25 +201,94 @@ export async function generateAISocialDraft(templateData: any = null): Promise<s
   return response.text().trim();
 }
 
-export async function enrichLeadWithAI(leadName: string, companyName: string) {
+const STAGE_GUIDE: Record<number, string> = {
+  0: "Stage 0 — no contact yet. Goal: start a conversation. Do NOT pitch. Ask about their operations.",
+  2: "Stage 2 — no reply after the first email. Goal: introduce an operational hypothesis relevant to their industry. Reference likely pain.",
+  3: "Stage 3 — no reply after the second email. Goal: provide proof. Introduce ApexisPro and the outcome. Do not oversell.",
+  4: "Stage 4 — no reply after the third email. Goal: pattern interrupt. Ask one simple, specific question.",
+};
+
+export async function generateStagedOutreachEmail(
+  lead: any,
+  opts: { stage: number; enrichment?: any; senderName?: string; websiteText?: string }
+) {
+  const { stage, enrichment, senderName = "Rhinon Labs", websiteText } = opts;
   const prompt = `
-    Research the following company and person for a sales outreach.
+    You are the Rhinon Labs outbound sales agent. Follow this memory EXACTLY — identity, ICP, pain patterns, email philosophy, stages, and output rules:
+
+    ${getSalesMemory()}
+
+    PROSPECT PROFILE:
+    Name: ${lead.name}
+    Title: ${lead.title || "Unknown"}
+    Company: ${lead.company}
+    Industry: ${lead.industry || "Unknown"}
+    Company size: ${lead.employeeCount ?? "Unknown"} employees
+    Location: ${lead.location || "Unknown"}
+    Website: ${lead.website || "Unknown"}
+    Services/keywords: ${(lead.keywords || "").slice(0, 600)}
+    Tech stack: ${(lead.technologies || "").slice(0, 300)}
+
+    ${enrichment ? `RESEARCH (verified):\n    Company: ${enrichment.companyDescription || ""}\n    Likely pain: ${enrichment.potentialPainPoint || ""}\n    Recent news: ${enrichment.recentNews || ""}` : ""}
+    ${websiteText ? `\n    WEBSITE CONTENT (from their own site — use a real, specific detail from here to personalize):\n    """${websiteText.slice(0, 2500)}"""\n` : ""}
+
+    CURRENT OUTREACH STAGE:
+    ${STAGE_GUIDE[stage] || STAGE_GUIDE[0]}
+
+    TASK:
+    Follow Research -> Pain Hypothesis -> Personalization -> Email. Write the next email for this stage.
+    Address the email to ${lead.name}. Sign off as ${senderName}.
+    Hard rules: under 120 words, no buzzwords, no generic agency language, business-operator tone.
+    Sell visibility / efficiency / operational scale — never sell "dashboard", "portal", "automation", or "AI agent".
+
+    Return ONLY a JSON object with: "prospectSummary", "likelyPain", "reasoning", "subject", "body".
+    Do not include any other text.
+  `;
+
+  const result = await model.generateContent(prompt);
+  const text = (await result.response).text();
+  try {
+    const m = text.match(/\{[\s\S]*\}/);
+    if (m) return JSON.parse(m[0]);
+  } catch {
+    /* fall through */
+  }
+  return { subject: `A quick thought on ${lead.company}'s operations`, body: text.trim(), prospectSummary: "", likelyPain: "", reasoning: "" };
+}
+
+export async function enrichLeadWithAI(
+  leadName: string,
+  companyName: string,
+  context: { title?: string; industry?: string; keywords?: string; technologies?: string; website?: string; websiteText?: string } = {}
+) {
+  const signals = [
+    context.title ? `Role: ${context.title}` : "",
+    context.industry ? `Industry: ${context.industry}` : "",
+    context.keywords ? `Business keywords: ${context.keywords.slice(0, 600)}` : "",
+    context.technologies ? `Known tech stack: ${context.technologies.slice(0, 400)}` : "",
+  ].filter(Boolean).join("\n    ");
+
+  const prompt = `
+    Research the following company and person for a B2B sales outreach. Use Google Search to find
+    CURRENT, VERIFIABLE facts. Do NOT invent facts — if you cannot verify something, leave it generic
+    or say so. Prefer information from their own website and recent search results.
+
     Lead Name: ${leadName}
     Company: ${companyName}
+    ${context.website ? `Website: ${context.website}` : ""}
+    ${signals ? `\n    KNOWN SIGNALS (do not contradict these):\n    ${signals}\n` : ""}
+    ${context.websiteText ? `\n    WEBSITE CONTENT (extracted from their own site — treat as authoritative):\n    """${context.websiteText.slice(0, 3500)}"""\n` : ""}
 
     Return a JSON object with the following fields:
-    - companyDescription: A short summary of what they do.
-    - recentNews: Any recent product launch, funding, or major event.
-    - potentialPainPoint: One operational inefficiency they might have that custom dashboards or automation could fix.
-    - linkedinDiscoveryHint: A suggestion on how to find their specific profile (e.g. keywords).
+    - companyDescription: A short, factual summary of what they actually do (based on their site / search).
+    - recentNews: Any recent, verifiable launch, project, funding, or event. Empty string if none found.
+    - potentialPainPoint: One concrete operational inefficiency they likely have that custom dashboards / workflow automation could fix, tied to their actual business.
+    - linkedinDiscoveryHint: How to find this person's specific LinkedIn profile.
 
     Only return the JSON.
   `;
 
-  const result = await model.generateContent(prompt);
-  const response = await result.response;
-  const text = response.text();
-
+  const text = await generateGroundedContent(prompt);
   try {
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     return jsonMatch ? JSON.parse(jsonMatch[0]) : { error: "Failed to parse AI response" };

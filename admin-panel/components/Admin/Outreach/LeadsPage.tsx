@@ -5,6 +5,7 @@ import {
   TbUsers,
   TbSearch,
   TbPlus,
+  TbUpload,
   TbRefresh,
   TbTrash,
   TbEdit,
@@ -18,12 +19,14 @@ import {
   TbTarget,
   TbBrandLinkedin,
   TbLayoutSidebarFilled,
-  TbLayoutSidebarRightFilled
+  TbLayoutSidebarRightFilled,
+  TbChevronDown
 } from "react-icons/tb";
 import { cn } from "@/lib/utils";
 import { apiFetch } from "@/lib/api";
 import { SubNavToggle } from "@/components/Admin/Common/CollapsibleSubNav/CollapsibleSubNav";
 import { useSideNav } from "@/context/SideNavContext";
+import { LeadImportModal } from "./LeadImportModal";
 
 type LeadStatus = "New" | "Enriched" | "Enrolled" | "Emailed" | "Replied" | "Bounced" | "Unsubscribed" | "Interested";
 type PanelMode = "view" | "create" | "edit";
@@ -41,6 +44,21 @@ interface Lead {
   source: string;
   notes: string | null;
   addedAt: string;
+  phone?: string | null;
+  seniority?: string | null;
+  department?: string | null;
+  industry?: string | null;
+  employeeCount?: number | null;
+  location?: string | null;
+  website?: string | null;
+  companyLinkedinUrl?: string | null;
+  emailStatus?: string | null;
+  emailConfidence?: string | null;
+  keywords?: string | null;
+  technologies?: string | null;
+  annualRevenue?: string | null;
+  raw?: Record<string, string> | null;
+  enrichment?: Record<string, any> | null;
 }
 
 const STATUS_COLORS: Record<LeadStatus, string> = {
@@ -66,6 +84,9 @@ export function LeadsPage() {
   const [enriching, setEnriching] = useState(false);
   const [enrichment, setEnrichment] = useState<any>(null);
   const [saving, setSaving] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   // Form State
   const [form, setForm] = useState({
@@ -170,9 +191,40 @@ export function LeadsPage() {
     }
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const allSelected = filteredLeads.length > 0 && filteredLeads.every(l => selectedIds.has(l.id));
+
+  const toggleSelectAll = () => {
+    setSelectedIds(allSelected ? new Set() : new Set(filteredLeads.map(l => l.id)));
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Delete ${selectedIds.size} lead(s)? This cannot be undone.`)) return;
+    setBulkDeleting(true);
+    try {
+      await apiFetch("/leads/bulk-delete", { method: "POST", body: JSON.stringify({ ids: Array.from(selectedIds) }) });
+      if (selectedLead && selectedIds.has(selectedLead.id)) setSelectedLead(null);
+      setSelectedIds(new Set());
+      fetchLeads();
+    } catch (err: any) {
+      alert(err.message || "Bulk delete failed");
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
   const selectLead = (lead: Lead) => {
     setSelectedLead(lead);
-    setEnrichment(null);
+    setEnrichment(lead.enrichment ?? null);
     setPanelMode("view");
     setIsPreviewExpanded(true);
   };
@@ -189,6 +241,10 @@ export function LeadsPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button onClick={() => setShowImport(true)} className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium hover:bg-stone-100">
+              Import CSV
+              <TbUpload size={14} />
+            </button>
             <button onClick={startCreate} className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium hover:bg-stone-100">
               Add Lead
               <TbPlus size={14} />
@@ -230,8 +286,35 @@ export function LeadsPage() {
             </select>
           </div>
 
-          <div className="mt-8 overflow-auto rounded-xl border border-gray-100 bg-white">
-            <div className="grid min-w-[800px] w-full grid-cols-[minmax(250px,1.5fr)_minmax(150px,1fr)_minmax(120px,0.8fr)_40px] border-b bg-stone-100 text-xs font-semibold uppercase tracking-wide text-gray-500">
+          {selectedIds.size > 0 && (
+            <div className="mt-4 flex items-center justify-between rounded-lg border border-blue-100 bg-blue-50 px-4 py-2.5">
+              <span className="text-sm font-medium text-blue-900">{selectedIds.size} selected</span>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setSelectedIds(new Set())} className="rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-white">
+                  Clear
+                </button>
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={bulkDeleting}
+                  className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-60"
+                >
+                  <TbTrash size={14} /> {bulkDeleting ? "Deleting..." : `Delete ${selectedIds.size}`}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-4 overflow-auto rounded-xl border border-gray-100 bg-white">
+            <div className="grid min-w-[800px] w-full grid-cols-[44px_minmax(250px,1.5fr)_minmax(150px,1fr)_minmax(120px,0.8fr)_40px] border-b bg-stone-100 text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <span className="flex items-center justify-center px-2 py-3">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={toggleSelectAll}
+                  className="h-4 w-4 cursor-pointer rounded border-gray-300 accent-blue-600"
+                  title="Select all"
+                />
+              </span>
               <span className="px-4 py-3">Lead</span>
               <span className="px-4 py-3">Company</span>
               <span className="px-4 py-3">Status</span>
@@ -248,10 +331,19 @@ export function LeadsPage() {
                 key={lead.id}
                 onClick={() => selectLead(lead)}
                 className={cn(
-                  "grid min-w-[800px] w-full cursor-pointer grid-cols-[minmax(250px,1.5fr)_minmax(150px,1fr)_minmax(120px,0.8fr)_40px] items-center border-b text-left text-sm hover:bg-stone-50 transition-colors",
+                  "grid min-w-[800px] w-full cursor-pointer grid-cols-[44px_minmax(250px,1.5fr)_minmax(150px,1fr)_minmax(120px,0.8fr)_40px] items-center border-b text-left text-sm hover:bg-stone-50 transition-colors",
                   selectedLead?.id === lead.id && "bg-blue-50 hover:bg-blue-50"
                 )}
               >
+                <span className="flex items-center justify-center px-2 py-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(lead.id)}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={() => toggleSelect(lead.id)}
+                    className="h-4 w-4 cursor-pointer rounded border-gray-300 accent-blue-600"
+                  />
+                </span>
                 <span className="px-4 py-3">
                   <div className="flex flex-col">
                     <span className="font-medium text-stone-900">{lead.name}</span>
@@ -316,9 +408,9 @@ export function LeadsPage() {
                       <div className="flex items-center gap-2 text-indigo-600 font-bold uppercase tracking-wider text-[10px]">
                         <TbBulb size={16} /> AI Intelligence
                       </div>
-                      {!enrichment && !enriching && (
+                      {!enriching && (
                         <button onClick={() => handleEnrich(selectedLead.id)} className="text-[10px] font-bold text-indigo-600 hover:underline flex items-center gap-1 uppercase tracking-wider">
-                          <TbRefresh size={12} /> Run Enrichment
+                          <TbRefresh size={12} /> {enrichment ? "Re-run" : "Run Enrichment"}
                         </button>
                       )}
                     </div>
@@ -328,6 +420,8 @@ export function LeadsPage() {
                       <div className="space-y-3">
                         <div><p className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest mb-1">Context</p><p className="text-xs text-stone-700 leading-relaxed">{enrichment.companyDescription}</p></div>
                         <div><p className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest mb-1">Pain Point</p><p className="text-xs text-stone-700 leading-relaxed font-medium">"{enrichment.potentialPainPoint}"</p></div>
+                        {enrichment.recentNews && <div><p className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest mb-1">Recent News</p><p className="text-xs text-stone-700 leading-relaxed">{enrichment.recentNews}</p></div>}
+                        {enrichment.linkedinDiscoveryHint && <div><p className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest mb-1">LinkedIn Hint</p><p className="text-xs text-stone-700 leading-relaxed">{enrichment.linkedinDiscoveryHint}</p></div>}
                       </div>
                     ) : (
                       <p className="text-[10px] text-indigo-400 italic text-center py-2">No intelligence gathered yet.</p>
@@ -336,10 +430,25 @@ export function LeadsPage() {
 
                   <div className="grid grid-cols-1 gap-4">
                     <DetailCard label="Email" value={selectedLead.email} />
+                    {selectedLead.phone && <DetailCard label="Phone" value={selectedLead.phone} />}
                     <DetailCard label="LinkedIn" value={selectedLead.linkedinUrl || "—"} isLink={!!selectedLead.linkedinUrl} />
+                    {selectedLead.seniority && <DetailCard label="Seniority" value={selectedLead.seniority} />}
+                    {selectedLead.department && <DetailCard label="Department" value={selectedLead.department} />}
+                    {selectedLead.industry && <DetailCard label="Industry" value={selectedLead.industry} />}
+                    {selectedLead.employeeCount != null && <DetailCard label="Company Size" value={`${selectedLead.employeeCount} employees`} />}
+                    {selectedLead.annualRevenue && <DetailCard label="Annual Revenue" value={formatRevenue(selectedLead.annualRevenue)} />}
+                    {selectedLead.location && <DetailCard label="Location" value={selectedLead.location} />}
+                    {selectedLead.website && <DetailCard label="Website" value={selectedLead.website} isLink />}
+                    {selectedLead.companyLinkedinUrl && <DetailCard label="Company LinkedIn" value={selectedLead.companyLinkedinUrl} isLink />}
+                    {selectedLead.technologies && <DetailCard label="Tech Stack" value={selectedLead.technologies} />}
+                    {selectedLead.emailStatus && <DetailCard label="Email Status" value={selectedLead.emailStatus} />}
                     <DetailCard label="Source" value={selectedLead.source} />
                     <DetailCard label="Notes" value={selectedLead.notes || "—"} />
                   </div>
+
+                  {selectedLead.raw && Object.keys(selectedLead.raw).length > 0 && (
+                    <RawDataSection raw={selectedLead.raw} />
+                  )}
                 </div>
               ) : (
                 <form onSubmit={handleSave} className="flex flex-col h-full p-5 space-y-4">
@@ -375,6 +484,15 @@ export function LeadsPage() {
           </div>
         )}
       </aside>
+
+      {showImport && (
+        <LeadImportModal
+          onClose={(didImport) => {
+            setShowImport(false);
+            if (didImport) fetchLeads();
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -387,6 +505,43 @@ function DetailCard({ label, value, isLink }: { label: string; value: string; is
         <a href={value.startsWith('http') ? value : `https://${value}`} target="_blank" className="font-medium text-blue-600 hover:underline truncate block">{value}</a>
       ) : (
         <p className="font-medium text-gray-900 leading-relaxed">{value}</p>
+      )}
+    </div>
+  );
+}
+
+function formatRevenue(v: string): string {
+  const n = Number(String(v).replace(/[^0-9.]/g, ""));
+  if (!Number.isFinite(n) || n === 0) return v;
+  if (n >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
+  if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
+  if (n >= 1e3) return `$${(n / 1e3).toFixed(0)}K`;
+  return `$${n}`;
+}
+
+function RawDataSection({ raw }: { raw: Record<string, string> }) {
+  const [open, setOpen] = useState(false);
+  const entries = Object.entries(raw);
+  return (
+    <div className="mt-4 rounded-xl border border-gray-100">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-stone-50 rounded-xl"
+      >
+        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
+          All Apollo data ({entries.length} fields)
+        </span>
+        <TbChevronDown className={cn("text-gray-400 transition-transform", open && "rotate-180")} size={16} />
+      </button>
+      {open && (
+        <div className="divide-y divide-gray-50 border-t">
+          {entries.map(([k, v]) => (
+            <div key={k} className="grid grid-cols-[38%_62%] gap-2 px-4 py-2 text-xs">
+              <span className="break-words text-gray-400">{k}</span>
+              <span className="break-words text-gray-800">{v}</span>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

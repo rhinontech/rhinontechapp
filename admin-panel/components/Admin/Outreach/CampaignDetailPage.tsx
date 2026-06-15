@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import {
   TbTarget,
   TbLoader,
@@ -89,6 +89,11 @@ export function CampaignDetailPage({ id }: { id: string }) {
   const [savingSettings, setSavingSettings] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [agentRunning, setAgentRunning] = useState(false);
+  const [agentProgress, setAgentProgress] = useState<{ done: number; total: number; current: string; currentId: string } | null>(null);
+  const [sendingApproved, setSendingApproved] = useState(false);
+  const [expandedLeadId, setExpandedLeadId] = useState<string | null>(null);
+  const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(new Set());
   const [socialStats, setSocialStats] = useState<Campaign["socialStats"] | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
   const [imagePrompt, setImagePrompt] = useState("");
@@ -208,6 +213,98 @@ export function CampaignDetailPage({ id }: { id: string }) {
       alert("Draft generation failed: " + err.message);
     } finally {
       setGenerating(false);
+    }
+  };
+
+  // Leads that still need a draft: never drafted yet, OR already sent and due for a follow-up.
+  // Excludes leads with a pending (unsent) draft and approved leads, so re-running won't overwrite them.
+  const draftTargets = leads.filter(l => !l.draftApproved && (!l.aiDraft || l.status === "Emailed"));
+
+  const toggleSelectLead = (leadId: string) => {
+    setSelectedLeadIds(prev => {
+      const next = new Set(prev);
+      if (next.has(leadId)) next.delete(leadId);
+      else next.add(leadId);
+      return next;
+    });
+  };
+  const allLeadsSelected = leads.length > 0 && leads.every(l => selectedLeadIds.has(l.id));
+  const toggleSelectAllLeads = () => {
+    setSelectedLeadIds(allLeadsSelected ? new Set() : new Set(leads.map(l => l.id)));
+  };
+
+  // Run the agent over a specific set of leads, one at a time, updating the table live.
+  const runAgentOnLeads = async (targets: any[]) => {
+    if (targets.length === 0) { alert("No leads selected to run the agent on."); return; }
+    setAgentRunning(true);
+    let drafted = 0;
+    for (let i = 0; i < targets.length; i++) {
+      const lead = targets[i];
+      setAgentProgress({ done: i, total: targets.length, current: lead.name, currentId: lead.id });
+      try {
+        const res = await apiFetch<{ lead: any; result: { skipped: boolean } }>(`/leads/${lead.id}/agent-draft`, { method: "POST" });
+        setLeads(prev => prev.map(l => (l.id === lead.id ? { ...l, ...res.lead } : l)));
+        if (res.result && !res.result.skipped) drafted++;
+      } catch {
+        /* skip this lead, keep going */
+      }
+    }
+    setAgentProgress(null);
+    setAgentRunning(false);
+    fetchCampaign();
+    alert(`Agent finished. Drafted ${drafted} of ${targets.length}. Review, approve, then Send Approved.`);
+  };
+
+  // If leads are selected, run on those (forces a re-draft). Otherwise draft the ones that still need it.
+  const handleRunAgent = async () => {
+    const selected = leads.filter(l => selectedLeadIds.has(l.id));
+    if (selected.length > 0) {
+      await runAgentOnLeads(selected);
+      setSelectedLeadIds(new Set());
+    } else {
+      if (draftTargets.length === 0) { alert("Nothing to draft — every lead is already drafted or approved. Select leads to force a re-draft."); return; }
+      await runAgentOnLeads(draftTargets);
+    }
+  };
+
+  const handleRedraft = async (lead: any) => {
+    if (agentRunning || agentProgress) return;
+    setAgentProgress({ done: 0, total: 1, current: lead.name, currentId: lead.id });
+    try {
+      const res = await apiFetch<{ lead: any; result: { skipped?: boolean; reason?: string } }>(`/leads/${lead.id}/agent-draft`, { method: "POST" });
+      setLeads(prev => prev.map(l => (l.id === lead.id ? { ...l, ...res.lead } : l)));
+      if (res.result?.skipped) alert(`Skipped: ${res.result.reason}`);
+    } catch (err: any) {
+      alert("Re-draft failed: " + err.message);
+    } finally {
+      setAgentProgress(null);
+    }
+  };
+
+  const toggleApprove = async (lead: any) => {
+    const next = !lead.draftApproved;
+    setLeads(prev => prev.map(l => (l.id === lead.id ? { ...l, draftApproved: next } : l)));
+    try {
+      await apiFetch(`/leads/${lead.id}`, { method: "PUT", body: JSON.stringify({ draftApproved: next }) });
+    } catch (err: any) {
+      setLeads(prev => prev.map(l => (l.id === lead.id ? { ...l, draftApproved: !next } : l)));
+      alert("Failed to update approval: " + err.message);
+    }
+  };
+
+  const handleSendApproved = async () => {
+    const count = leads.filter(l => l.draftApproved).length;
+    if (count === 0) { alert("Approve at least one draft first."); return; }
+    if (!confirm(`Send ${count} approved email(s) now?`)) return;
+    setSendingApproved(true);
+    try {
+      const r = await apiFetch<{ sent: number }>(`/campaigns/${id}/send-approved`, { method: "POST" });
+      await fetchCampaign();
+      alert(`Sent ${r.sent} email(s).`);
+    } catch (err: any) {
+      alert("Send failed: " + err.message);
+    } finally {
+      setSendingApproved(false);
     }
   };
 
@@ -359,18 +456,72 @@ export function CampaignDetailPage({ id }: { id: string }) {
 
             <div className="p-4">
               {activeTab === "leads" && (
-                <div className="overflow-auto rounded-lg border border-stone-100">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    {agentProgress ? (
+                      <p className="flex items-center gap-2 text-[11px] font-semibold text-violet-600">
+                        <TbLoader className="animate-spin" size={13} />
+                        Drafting {agentProgress.done + 1}/{agentProgress.total}: {agentProgress.current}…
+                      </p>
+                    ) : (
+                      <p className="text-[11px] font-medium text-stone-500">
+                        {leads.filter(l => l.draftApproved).length} approved · {leads.filter(l => l.aiDraft).length} drafted · {leads.length} total
+                        {selectedLeadIds.size > 0 && <span className="text-violet-600 font-semibold"> · {selectedLeadIds.size} selected</span>}
+                      </p>
+                    )}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleRunAgent}
+                        disabled={agentRunning || (selectedLeadIds.size === 0 && draftTargets.length === 0)}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-50"
+                        title="Runs the agent on selected leads (forces a re-draft), or on all leads still needing a draft"
+                      >
+                        {agentRunning ? <TbLoader className="animate-spin" size={14} /> : <TbSparkles size={14} />}
+                        {selectedLeadIds.size > 0
+                          ? `Run Agent on Selected (${selectedLeadIds.size})`
+                          : `Run Agent (Draft)${draftTargets.length ? ` (${draftTargets.length})` : ""}`}
+                      </button>
+                      <button
+                        onClick={handleSendApproved}
+                        disabled={sendingApproved || leads.filter(l => l.draftApproved).length === 0}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        {sendingApproved ? <TbLoader className="animate-spin" size={14} /> : <TbCheck size={14} />}
+                        Send Approved ({leads.filter(l => l.draftApproved).length})
+                      </button>
+                    </div>
+                  </div>
+                  <div className="overflow-auto rounded-lg border border-stone-100">
                   <table className="w-full text-left">
                     <thead className="bg-stone-100/50 border-b border-stone-100">
                       <tr>
+                        <th className="px-4 py-3 w-10">
+                          <input
+                            type="checkbox"
+                            checked={allLeadsSelected}
+                            onChange={toggleSelectAllLeads}
+                            className="h-4 w-4 cursor-pointer rounded border-gray-300 accent-violet-600"
+                            title="Select all"
+                          />
+                        </th>
                         <th className="px-6 py-3 text-[10px] font-bold text-stone-400 uppercase tracking-widest">Lead</th>
                         <th className="px-6 py-3 text-[10px] font-bold text-stone-400 uppercase tracking-widest">Status</th>
-                        <th className="px-6 py-3 text-[10px] font-bold text-stone-400 uppercase tracking-widest text-right">Draft</th>
+                        <th className="px-6 py-3 text-[10px] font-bold text-stone-400 uppercase tracking-widest">Draft</th>
+                        <th className="px-6 py-3 text-[10px] font-bold text-stone-400 uppercase tracking-widest text-right">Approve</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-stone-50">
                       {leads.map(lead => (
-                        <tr key={lead.id} className="hover:bg-stone-50 transition-colors text-sm">
+                        <Fragment key={lead.id}>
+                        <tr className={cn("hover:bg-stone-50 transition-colors text-sm", selectedLeadIds.has(lead.id) && "bg-violet-50/50")}>
+                          <td className="px-4 py-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedLeadIds.has(lead.id)}
+                              onChange={() => toggleSelectLead(lead.id)}
+                              className="h-4 w-4 cursor-pointer rounded border-gray-300 accent-violet-600"
+                            />
+                          </td>
                           <td className="px-6 py-3">
                             <p className="font-bold text-stone-900">{lead.name}</p>
                             <p className="text-[10px] text-stone-400 font-medium uppercase">{lead.company}</p>
@@ -380,19 +531,55 @@ export function CampaignDetailPage({ id }: { id: string }) {
                               {lead.status}
                             </span>
                           </td>
-                          <td className="px-6 py-3 text-right">
-                            {lead.aiDraft ? (
-                              <span className="text-emerald-600 flex items-center justify-end gap-1 text-[10px] font-bold">
-                                <TbCheck /> AI DRAFT READY
+                          <td className="px-6 py-3">
+                            {agentProgress?.currentId === lead.id ? (
+                              <span className="flex items-center gap-1 text-[10px] font-bold text-violet-600">
+                                <TbLoader className="animate-spin" size={12} /> Drafting…
                               </span>
+                            ) : lead.aiDraft ? (
+                              <div className="flex items-center gap-3">
+                                <button
+                                  onClick={() => setExpandedLeadId(expandedLeadId === lead.id ? null : lead.id)}
+                                  className="text-blue-600 text-[10px] font-bold hover:underline"
+                                >
+                                  {expandedLeadId === lead.id ? "Hide draft" : "View draft"}
+                                </button>
+                                <button
+                                  onClick={() => handleRedraft(lead)}
+                                  disabled={agentRunning || !!agentProgress}
+                                  className="text-violet-600 text-[10px] font-bold hover:underline disabled:opacity-40"
+                                  title="Regenerate this lead's draft (resets approval)"
+                                >
+                                  Re-draft
+                                </button>
+                              </div>
                             ) : (
                               <span className="text-stone-300 text-[10px] font-bold italic uppercase">Pending</span>
                             )}
                           </td>
+                          <td className="px-6 py-3 text-right">
+                            <input
+                              type="checkbox"
+                              checked={!!lead.draftApproved}
+                              disabled={!lead.aiDraft}
+                              onChange={() => toggleApprove(lead)}
+                              className="h-4 w-4 cursor-pointer rounded border-gray-300 accent-blue-600 disabled:opacity-40"
+                            />
+                          </td>
                         </tr>
+                        {expandedLeadId === lead.id && lead.aiDraft && (
+                          <tr className="bg-stone-50/60">
+                            <td colSpan={5} className="px-6 py-4">
+                              {lead.draftSubject && <p className="text-xs font-bold text-stone-800 mb-1">Subject: {lead.draftSubject}</p>}
+                              <p className="whitespace-pre-wrap text-xs leading-relaxed text-stone-700">{lead.aiDraft}</p>
+                            </td>
+                          </tr>
+                        )}
+                        </Fragment>
                       ))}
                     </tbody>
                   </table>
+                  </div>
                 </div>
               )}
 
