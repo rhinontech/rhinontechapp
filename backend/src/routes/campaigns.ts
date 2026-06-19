@@ -134,6 +134,8 @@ function fillPlaceholders(text: string, lead: any, senderName: string): string {
 }
 
 const BRAND_LOGO_URL = process.env.BRAND_LOGO_URL || "https://www.rhinonlabs.com/Logo_Rhinon_Labs_Light.png";
+const BRAND_SITE_URL = process.env.BRAND_SITE_URL || "https://www.rhinonlabs.com";
+const COMPANY_ADDRESS = process.env.COMPANY_ADDRESS || ""; // registered address for compliant footer
 
 // Premium, responsive, light/dark-aware HTML email (bulletproof table layout).
 function toEmailHtml(plainText: string, imageUrl?: string): string {
@@ -191,12 +193,18 @@ function toEmailHtml(plainText: string, imageUrl?: string): string {
         </td></tr>
         <tr><td style="height:3px;line-height:3px;font-size:0;background:#4f46e5">&nbsp;</td></tr>
         ${imageBlock}
-        <tr><td class="px" style="padding:38px 40px 10px">
+        <tr><td class="px" style="padding:38px 40px 8px">
           ${paragraphs}
         </td></tr>
-        <tr><td class="px divider" style="padding:22px 40px 34px;border-top:1px solid #ececed">
+        <tr><td class="px" style="padding:0 40px 32px">
+          <p class="text" style="margin:0;font-size:14px;line-height:1.5;color:#111827">
+            <strong style="font-weight:600">Rhinon Labs</strong><br>
+            <a href="${BRAND_SITE_URL}" target="_blank" rel="noopener noreferrer" style="color:#4f46e5;text-decoration:none">rhinonlabs.com</a>
+          </p>
+        </td></tr>
+        <tr><td class="px divider" style="padding:18px 40px 32px;border-top:1px solid #ececed">
           <p class="muted" style="margin:0;font-size:12px;line-height:1.6;color:#9ca3af">
-            <strong style="color:inherit">Rhinon Labs</strong> &middot; Operations scaling partner for growing teams<br>
+            Rhinon Labs is a product of Rhinon Tech Pvt&nbsp;Ltd${COMPANY_ADDRESS ? ` &middot; ${esc(COMPANY_ADDRESS)}` : ""}.<br>
             You received this because we believe Rhinon Labs may be a fit for your operations. Not interested? Just reply &ldquo;unsubscribe&rdquo; and we&rsquo;ll remove you.
           </p>
         </td></tr>
